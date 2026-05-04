@@ -41,7 +41,7 @@ const handleLogout = () => {
   navigate('/login')
 }
   return (
-    <aside className="bg-sidebar-green w-72 h-screen flex flex-col text-white">
+    <aside className="fixed top-0 left-0 w-72 h-screen bg-sidebar-green flex flex-col text-white">
       {/* Logo */}
       <div className="p-8">
         <h1 className="text-2xl font-bold tracking-wide">
