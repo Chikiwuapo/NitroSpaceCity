@@ -20,7 +20,7 @@ export const AppRoutes = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/clientes" element={<ClientesList />} />
         <Route path="/compras" element={<ComprasList />} />
         <Route path="/ventas" element={<VentasList />} />

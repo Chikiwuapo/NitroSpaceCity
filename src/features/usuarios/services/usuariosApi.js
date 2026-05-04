@@ -1,76 +1,65 @@
 export const usuariosApi = {
   getUsers: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockUsers = [
-          {
-            id: 1,
-            primer_nombre: 'Juan',
-            segundo_nombre: 'Carlos',
-            primer_apellido: 'Pérez',
-            segundo_apellido: 'García',
-            dni: '71234567',
-            correo: 'juan.perez@autovalor.com',
-            telefono: '+51 987 654 321',
-            rol: 'Administrador',
-            estado_usuario: 'Activo',
-            url_img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop'
+    try {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        throw new Error('No hay token, usuario no autenticado')
+      }
+
+      const response = await fetch(
+        'https://faithful-healing-production-9e06.up.railway.app/api/user/getAll',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-          {
-            id: 2,
-            primer_nombre: 'María',
-            segundo_nombre: 'Fernanda',
-            primer_apellido: 'López',
-            segundo_apellido: 'Silva',
-            dni: '72345678',
-            correo: 'maria.lopez@autovalor.com',
-            telefono: '+51 912 345 678',
-            rol: 'Vendedor',
-            estado_usuario: 'Activo',
-            url_img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop'
-          },
-          {
-            id: 3,
-            primer_nombre: 'José',
-            segundo_nombre: 'Luis',
-            primer_apellido: 'Rodríguez',
-            segundo_apellido: '',
-            dni: '73456789',
-            correo: 'jose.rodriguez@autovalor.com',
-            telefono: '+51 923 456 789',
-            rol: 'Vendedor',
-            estado_usuario: 'Inactivo',
-            url_img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'
-          },
-          {
-            id: 4,
-            primer_nombre: 'Ana',
-            segundo_nombre: '',
-            primer_apellido: 'Martínez',
-            segundo_apellido: '',
-            dni: '74567890',
-            correo: 'ana.martinez@autovalor.com',
-            telefono: '+51 934 567 890',
-            rol: 'Contador',
-            estado_usuario: 'Activo',
-            url_img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop'
-          },
-          {
-            id: 5,
-            primer_nombre: 'Pedro',
-            segundo_nombre: 'Pablo',
-            primer_apellido: 'González',
-            segundo_apellido: 'Rojas',
-            dni: '75678901',
-            correo: 'pedro.gonzalez@autovalor.com',
-            telefono: '+51 945 678 901',
-            rol: 'Jefe de Ventas',
-            estado_usuario: 'Activo',
-            url_img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop'
-          }
-        ];
-        resolve(mockUsers);
-      }, 1000);
-    });
+        }
+      )
+
+      // Manejo de error HTTP
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('USUARIOS RESPONSE:', data)
+const getRoleName = (id) => {
+  switch (id) {
+    case 1:
+      return 'Administrador'
+    case 2:
+      return 'Empleado'
+    case 3:
+      return 'Mecánico'
+    default:
+      return 'Sin rol'
   }
-};
+}
+const getStatusName = (id) => {
+  return id === 1 ? 'Activo' : 'Inactivo'
+}
+      // Soporta distintas estructuras
+      const lista = data.data || data
+
+      if (!Array.isArray(lista)) {
+        throw new Error('La respuesta no es un array')
+      }
+
+      return lista.map((u) => ({
+        id: u.id,
+        firstName: u.primer_nombre,
+        secondName: u.segundo_nombre,
+        lastName: `${u.primer_apellido} ${u.segundo_apellido || ''}`,
+        dni: u.dni,
+        phone: u.telefono,
+        email: u.correo,
+        role: getRoleName(u.id_rol),
+        status: getStatusName(u.id_estado_usuario),
+        photo: u.url_img,
+      }))
+    } catch (error) {
+      console.error('Error en getUsers:', error)
+      throw error
+    }
+  },
+}
