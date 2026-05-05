@@ -8,6 +8,7 @@ const VentasList = lazy(() => import('../features/ventas/pages/VentasList'));
 const UsuariosList = lazy(() => import('../features/usuarios/pages/UsuariosList'));
 const ReportesDashboard = lazy(() => import('../features/reportes/pages/ReportesDashboard'));
 const InventarioPage = lazy(() => import('../features/inventario/pages/InventarioPage'));
+const NotificacionesPage = lazy(() => import('../features/notificaciones/pages/NotificacionesPage'));
 const PlaceholderPage = lazy(() => import('../shared/components/PlaceholderPage'));
 
 const LoadingFallback = () => (
@@ -28,7 +29,7 @@ export const AppRoutes = () => {
         <Route path="/financiamiento" element={<PlaceholderPage />} />
         <Route path="/inventario" element={<InventarioPage />} />
         <Route path="/mantenimiento" element={<PlaceholderPage />} />
-        <Route path="/notificaciones" element={<PlaceholderPage />} />
+        <Route path="/notificaciones" element={<NotificacionesPage />} />
         <Route path="/reportes" element={<ReportesDashboard />} />
       </Routes>
     </Suspense>
