@@ -4,15 +4,16 @@ import { useUsers } from '../hooks/useUsers'
 
 const getFullName = (user) => {
   const names = [
-    user.primer_nombre,
-    user.segundo_nombre,
-    user.primer_apellido,
-    user.segundo_apellido
+    user.firstName,
+    user.secondName,
+    user.lastName
   ].filter(Boolean)
   return names.join(' ')
 }
 
 const getRoleColor = (role) => {
+  if (!role) return 'bg-gray-100 text-gray-700'
+
   switch (role.toLowerCase()) {
     case 'administrador':
       return 'bg-[#0a332a]/10 text-[#0a332a]'
@@ -28,6 +29,8 @@ const getRoleColor = (role) => {
 }
 
 const getStatusColor = (status) => {
+  if (!status) return 'bg-gray-100 text-gray-700'
+
   switch (status.toLowerCase()) {
     case 'activo':
       return 'bg-emerald-100 text-emerald-700'
@@ -37,7 +40,6 @@ const getStatusColor = (status) => {
       return 'bg-gray-100 text-gray-700'
   }
 }
-
 const UserRowSkeleton = () => {
   return (
     <tr className="animate-pulse">
@@ -81,7 +83,7 @@ const UsuariosList = () => {
     },
     {
       title: 'Usuarios Activos',
-      value: users.filter(u => u.estado_usuario === 'Activo').length,
+      value: users.filter(u => u.status === 'Activo').length,
       icon: Users,
       color: 'bg-emerald-100',
       iconColor: 'text-emerald-600',
@@ -206,49 +208,62 @@ const UsuariosList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={user.url_img}
-                        alt={getFullName(user)}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-100"
-                      />
-                      <div>
-                        <p className="font-semibold text-gray-800">{getFullName(user)}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.rol)}`}>
-                      {user.rol}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-gray-800 font-medium">DNI</p>
-                    <p className="text-gray-600">{user.dni}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Mail className="w-4 h-4" />
-                        <span>{user.correo}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Phone className="w-4 h-4" />
-                        <span>{user.telefono}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.estado_usuario)}`}>
-                      {user.estado_usuario}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {users.map((user) => (
+    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+      
+      {/* Usuario */}
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <img
+            src={user.photo || 'https://via.placeholder.com/40'}
+            alt={getFullName(user)}
+            className="w-10 h-10 rounded-full object-cover border-2 border-gray-100"
+          />
+          <div>
+            <p className="font-semibold text-gray-800">
+              {getFullName(user)}
+            </p>
+          </div>
+        </div>
+      </td>
+
+      {/* Rol */}
+      <td className="px-6 py-4">
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
+          {user.role}
+        </span>
+      </td>
+
+      {/* DNI */}
+      <td className="px-6 py-4">
+        <p className="text-gray-800 font-medium">DNI</p>
+        <p className="text-gray-600">{user.dni}</p>
+      </td>
+
+      {/* Contacto */}
+      <td className="px-6 py-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Mail className="w-4 h-4" />
+            <span>{user.email}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Phone className="w-4 h-4" />
+            <span>{user.phone}</span>
+          </div>
+        </div>
+      </td>
+
+      {/* Estado */}
+      <td className="px-6 py-4">
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
+          {user.status}
+        </span>
+      </td>
+
+    </tr>
+  ))}
+</tbody>
           </table>
         </div>
       </div>
