@@ -64,3 +64,5 @@ export const CustomerRow = ({ customer }) => {
     </tr>
   )
 }
+
+export default CustomerRow

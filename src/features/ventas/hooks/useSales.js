@@ -25,3 +25,5 @@ export const useSales = () => {
 
   return { data, loading, error };
 };
+
+export default useSales;

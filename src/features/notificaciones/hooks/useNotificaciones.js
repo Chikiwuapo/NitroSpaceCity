@@ -15,3 +15,5 @@ export const useNotificaciones = () => {
 
   return { notificaciones, marcarTodas };
 };
+
+export default useNotificaciones;

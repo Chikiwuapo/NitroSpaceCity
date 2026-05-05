@@ -19,7 +19,7 @@ const StatusBadge = ({ estado }) => {
 export const InventarioTable = ({ vehiculos }) => {
   return (
     <div className="bg-white rounded-[32px] shadow-sm overflow-hidden flex flex-col flex-1">
-      <div className="overflow-x-auto flex-1">
+      <div className="overflow-x-auto overflow-y-auto flex-1">
         <table className="w-full">
           <thead className="bg-gray-50">
           <tr>
