@@ -29,3 +29,8 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.4);
 }
+.input {
+  @apply w-full px-4 py-2 border border-gray-200 rounded-xl 
+  focus:outline-none focus:ring-2 focus:ring-[#0a332a]/20 
+  focus:border-[#0a332a];
+}
