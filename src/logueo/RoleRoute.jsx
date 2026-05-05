@@ -3,7 +3,13 @@ import { PERMISSIONS } from './roles'
 
 export const RoleRoute = ({ children }) => {
   const location = useLocation()
-  const user = JSON.parse(localStorage.getItem('user'))
+  let user = null
+  try {
+    user = JSON.parse(localStorage.getItem('user'))
+  } catch (error) {
+    // Invalid user data, redirect to login
+    return <Navigate to="/login" />
+  }
 
   if (!user) return <Navigate to="/login" />
 
