@@ -25,3 +25,5 @@ export const usePurchases = () => {
 
   return { data, loading, error };
 };
+
+export default usePurchases;

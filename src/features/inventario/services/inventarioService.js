@@ -56,6 +56,7 @@ return data.map((v) => ({
   stock: v.stock,
   anio: v.anio,
   color: v.color,
+  placa: v.placa || `PLACA-${v.id}`,
 }));
 
     } catch (error) {
