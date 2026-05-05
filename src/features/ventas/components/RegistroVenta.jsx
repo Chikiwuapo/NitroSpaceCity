@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { X, Plus, Trash2, CheckCircle2, Search, ShoppingCart, Info } from 'lucide-react'
+import { X, Plus, Trash2, CheckCircle2, Search, ShoppingCart, Info, User } from 'lucide-react'
 import AgregarCarro from './AgregarCarro'
+import ClienteSelector from './ClienteSelector'
+import { ventasApi } from '../services/ventasApi'
 
 const IGV_RATE = 0.18
 
@@ -8,17 +10,26 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
   const [showSuccess, setShowSuccess] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false)
-  // Esta es la lista principal que usaremos
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedCliente, setSelectedCliente] = useState(null)
   const [vehiculosSeleccionados, setVehiculosSeleccionados] = useState([])
+  const [user] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}')
+    } catch {
+      return {}
+    }
+  })
 
   const [form, setForm] = useState({
-    cliente: '',
     fecha: new Date().toISOString().split('T')[0],
     serie: 'F001',
     numero: '',
-    vendedor: '',
+    vendedor: user.primer_nombre ? `${user.primer_nombre} ${user.primer_apellido || ''}` : 'Administrador',
     metodoPago: 'Contado',
-    observacion: ''
+    observacion: '',
+    id_estado_pago: 1,
+    id_tipo_comprobante: 1
   })
 
   useEffect(() => {
@@ -29,7 +40,21 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
     }
   }, [isOpen]);
 
-  // Maneja la selección desde el modal AgregarCarro
+  useEffect(() => {
+    if (!isOpen) {
+      setForm({
+        fecha: new Date().toISOString().split('T')[0],
+        serie: 'F001',
+        numero: '',
+        vendedor: 'Administrador',
+        metodoPago: 'Contado',
+        observacion: ''
+      })
+      setSelectedCliente(null)
+      setVehiculosSeleccionados([])
+    }
+  }, [isOpen])
+
   const manejarSeleccionVehiculo = (vehiculo) => {
     if (vehiculosSeleccionados.find(v => v.id === vehiculo.id)) {
       alert("Este vehículo ya ha sido agregado a la lista.")
@@ -44,20 +69,61 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
     setVehiculosSeleccionados(prev => prev.filter(v => v.id !== id))
   }
 
-  // Cálculos basados en vehiculosSeleccionados
   const subtotal = vehiculosSeleccionados.reduce((acc, v) => acc + (v.precio * v.cantidad), 0)
   const descuentoTotal = vehiculosSeleccionados.reduce((acc, v) => acc + (v.descuento || 0), 0)
   const baseImponible = subtotal - descuentoTotal
   const igv = baseImponible * IGV_RATE
   const total = baseImponible + igv
 
-  const handleSubmit = () => {
-    setShowSuccess(true)
-    setTimeout(() => {
-      setShowSuccess(false)
-      onClose()
-      onSuccess?.()
-    }, 2000)
+  const handleSubmit = async () => {
+    if (!selectedCliente) {
+      alert('Por favor seleccione un cliente')
+      return
+    }
+    if (vehiculosSeleccionados.length === 0) {
+      alert('Por favor agregue al menos un vehículo')
+      return
+    }
+    if (!form.numero) {
+      alert('Por favor ingrese el número de comprobante')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      
+      const ventaData = {
+        id_cliente: selectedCliente.id,
+        serie: form.serie,
+        nro_comprobante: form.numero,
+        fecha_venta: form.fecha,
+        subtotal: subtotal,
+        igv: igv,
+        total: total,
+        id_estado_pago: form.id_estado_pago,
+        id_tipo_comprobante: form.id_tipo_comprobante,
+        id_usuario: user.id,
+        vehiculos: vehiculosSeleccionados.map(v => ({
+          id_vehiculo: v.id,
+          cantidad: v.cantidad,
+          subtotal: v.precio * v.cantidad
+        }))
+      }
+
+      await ventasApi.createVenta(ventaData)
+      
+      setShowSuccess(true)
+      setTimeout(() => {
+        setShowSuccess(false)
+        onClose()
+        onSuccess?.()
+      }, 2000)
+    } catch (error) {
+      console.error('Error al registrar venta:', error)
+      alert(`Error al registrar la venta: ${error.message}`)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (!isOpen) return null
@@ -87,41 +153,67 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
           <section className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
             <h3 className="text-blue-600 font-semibold mb-4">Datos de la Venta</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
+              <div className="space-y-1 md:col-span-2">
                 <label className="text-xs font-bold text-gray-600">Cliente *</label>
-                <select className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none focus:ring-1 focus:ring-[#0a332a]">
-                  <option>Seleccionar cliente</option>
-                  <option>Juan Pérez (DNI: 12345678)</option>
-                </select>
+                <ClienteSelector
+                  selectedCliente={selectedCliente}
+                  onSelectCliente={setSelectedCliente}
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-600">Fecha de Venta *</label>
-                <input type="date" value={form.fecha} className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" />
+                <input 
+                  type="date" 
+                  value={form.fecha} 
+                  onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                  className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" 
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-600">Serie *</label>
-                <input type="text" value={form.serie} className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" />
+                <input 
+                  type="text" 
+                  value={form.serie}
+                  onChange={(e) => setForm({ ...form, serie: e.target.value })}
+                  className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" 
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-600">N° Comprobante *</label>
-                <input type="text" placeholder="000245" className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" />
+                <input 
+                  type="text" 
+                  placeholder="000245"
+                  value={form.numero}
+                  onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                  className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" 
+                />
               </div>
-              <div className="space-y-1 text-gray-400">
+              <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-600">Vendedor *</label>
-                <select className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" disabled>
-                  <option>Administrador</option>
-                </select>
+                <div className="w-full border rounded-lg p-2 text-sm bg-gray-100 text-gray-700">
+                  {form.vendedor}
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-600">Forma de Pago *</label>
-                <select className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none">
+                <select 
+                  className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none"
+                  value={form.metodoPago}
+                  onChange={(e) => setForm({ ...form, metodoPago: e.target.value })}
+                >
                   <option>Contado</option>
                   <option>Crédito</option>
                 </select>
               </div>
               <div className="space-y-1 md:col-span-2">
                 <label className="text-xs font-bold text-gray-600">Observación</label>
-                <input type="text" placeholder="Observación (opcional)" className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" />
+                <input 
+                  type="text" 
+                  placeholder="Observación (opcional)"
+                  value={form.observacion}
+                  onChange={(e) => setForm({ ...form, observacion: e.target.value })}
+                  className="w-full border rounded-lg p-2 text-sm bg-gray-50 outline-none" 
+                />
               </div>
             </div>
           </section>
@@ -245,11 +337,15 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
 
                 <button
                   onClick={handleSubmit}
-                  disabled={vehiculosSeleccionados.length === 0}
+                  disabled={vehiculosSeleccionados.length === 0 || isSubmitting}
                   className="w-full bg-[#0a332a] hover:bg-[#0d4438] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg disabled:opacity-50 disabled:bg-gray-400 disabled:shadow-none"
                 >
-                  <CheckCircle2 size={20} />
-                  Registrar Venta
+                  {isSubmitting ? (
+                    <CheckCircle2 size={20} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={20} />
+                  )}
+                  {isSubmitting ? 'Registrando...' : 'Registrar Venta'}
                 </button>
               </section>
             </div>

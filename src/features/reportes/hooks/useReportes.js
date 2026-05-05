@@ -25,3 +25,5 @@ export const useReportes = () => {
 
   return { data, loading, error };
 };
+
+export default useReportes;

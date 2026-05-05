@@ -46,7 +46,7 @@ const handleLogout = () => {
       <div className="p-8">
         <h1 className="text-2xl font-bold tracking-wide">
           <span className="text-white">Nitro</span>
-          <span className="text-emerald-400">SpaceCity</span>
+          <span className="text-emerald-400">Space</span>
         </h1>
       </div>
 

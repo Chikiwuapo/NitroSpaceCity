@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ShoppingBag, CreditCard, Truck, Calendar, FileText, ChevronRight, Loader2, AlertCircle, User } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ShoppingBag, CreditCard, Truck, Calendar, FileText, ChevronRight, Loader2, AlertCircle, User, FileDown } from 'lucide-react'
 import { useSales } from '../hooks/useSales'
 import RegistrarVenta from '../components/RegistroVenta' // ajusta la ruta
 
@@ -7,6 +7,11 @@ const VentasList = () => {
   const { data: sales, loading, error, refetch } = useSales()
   const [selectedSale, setSelectedSale] = useState(null)
   const [isOpenRegistrar, setIsOpenRegistrar] = useState(false)
+  const printRef = useRef(null)
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   const statWidgets = [
     {
@@ -18,14 +23,20 @@ const VentasList = () => {
     },
     {
       title: 'Ventas Pagadas',
-      value: sales.filter(s => s.estado_pago?.toLowerCase() === 'pagado').length,
+      value: sales.filter(s => {
+        const estado = (s.estado_pago || '').toLowerCase()
+        return estado === 'pagado' || estado === 'vendido' || estado === 'pagada'
+      }).length,
       icon: CreditCard,
       color: 'bg-emerald-100',
       iconColor: 'text-emerald-600',
     },
     {
       title: 'Ventas Entregadas',
-      value: sales.filter(s => s.estado_entrega?.toLowerCase() === 'entregado').length,
+      value: sales.filter(s => {
+        const estado = (s.estado_entrega || '').toLowerCase()
+        return estado === 'entregado' || estado === 'entregada'
+      }).length,
       icon: Truck,
       color: 'bg-blue-100',
       iconColor: 'text-blue-600',
@@ -213,34 +224,43 @@ const getStatusColor = (status) => {
 
       {selectedSale && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div ref={printRef} className="bg-white rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-8">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">Detalle de Venta</h2>
                   <p className="text-gray-500">{selectedSale.tipo_comprobante} {selectedSale.serie}-{selectedSale.numero_comprobante}</p>
                 </div>
-                <button
-                  onClick={() => setSelectedSale(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handlePrint}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 p-2 rounded-lg transition-colors"
+                    title="Exportar a PDF"
+                  >
+                    <FileDown className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedSale(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-4 mb-6">
                 <img
-                  src={selectedSale.cliente.img_url}
-                  alt={selectedSale.cliente.nombre_completo}
+                  src={selectedSale.cliente.img_url || 'https://via.placeholder.com/80'}
+                  alt={selectedSale.cliente.nombre_completo || 'Cliente'}
                   className="w-20 h-20 rounded-full object-cover border-2 border-gray-100"
                 />
                 <div>
-                  <p className="text-xl font-bold text-gray-800">{selectedSale.cliente.nombre_completo}</p>
+                  <p className="text-xl font-bold text-gray-800">{selectedSale.cliente.nombre_completo || 'Cliente'}</p>
                   <p className="text-gray-500 flex items-center gap-1">
                     <User className="w-4 h-4" />
-                    Vendedor: {selectedSale.usuario}
+                    Vendedor: {selectedSale.usuario || 'Vendedor'}
                   </p>
                 </div>
               </div>
@@ -251,8 +271,8 @@ const getStatusColor = (status) => {
                   <p className="font-semibold text-gray-800">{formatDate(selectedSale.fecha_venta)}</p>
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-4">
-                  <p className="text-sm text-gray-500 mb-1">Vehículo</p>
-                  <p className="font-semibold text-gray-800">{selectedSale.vehiculo.modelo} ({selectedSale.vehiculo.tipo})</p>
+                  <p className="text-sm text-gray-500 mb-1">Vehículos</p>
+                  <p className="font-semibold text-gray-800">{selectedSale.detalle.length} vehículo(s)</p>
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-4">
                   <p className="text-sm text-gray-500 mb-1">Estado de Pago</p>
@@ -272,21 +292,32 @@ const getStatusColor = (status) => {
                 <h3 className="font-bold text-gray-800 mb-4">Detalle de Productos</h3>
                 <div className="space-y-3">
                   {selectedSale.detalle.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center bg-white rounded-xl p-4">
-                      <div>
-                        <p className="font-semibold text-gray-800">{item.descripcion}</p>
-                        <p className="text-sm text-gray-500">Cantidad: {item.cantidad}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-800">{formatCurrency(item.precio_unitario)}</p>
-                        <p className="text-sm text-gray-500">{formatCurrency(item.subtotal)}</p>
+                    <div key={item.id} className="bg-white rounded-xl p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-gray-800">
+                            {item.marca && item.modelo ? `${item.marca} ${item.modelo}` : item.descripcion}
+                          </p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs text-gray-500">
+                            {item.placa && <p><span className="font-medium">Placa:</span> {item.placa}</p>}
+                            {item.color && <p><span className="font-medium">Color:</span> {item.color}</p>}
+                            {item.anio && <p><span className="font-medium">Año:</span> {item.anio}</p>}
+                            {item.transmision && <p><span className="font-medium">Transmisión:</span> {item.transmision}</p>}
+                            {item.combustible && <p><span className="font-medium">Combustible:</span> {item.combustible}</p>}
+                            <p><span className="font-medium">Cantidad:</span> {item.cantidad}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-800 text-lg">{formatCurrency(item.precio_unitario)}</p>
+                          <p className="text-sm text-gray-500">Subtotal: {formatCurrency(item.subtotal)}</p>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-[#0a332a]/5 rounded-2xl p-6">
+              <div className="bg-[#0a332a]/5 rounded-2xl p-6 mb-6">
                 <h3 className="font-bold text-gray-800 mb-4">Desglose Financiero</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">

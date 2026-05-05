@@ -114,3 +114,5 @@ export const useInventario = () => {
     resetFilters
   };
 };
+
+export default useInventario;
