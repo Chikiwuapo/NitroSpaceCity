@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { ShoppingBag, CreditCard, Truck, Calendar, FileText, ChevronRight, Loader2, AlertCircle, User } from 'lucide-react'
 import { useSales } from '../hooks/useSales'
+import RegistrarVenta from '../components/RegistroVenta' // ajusta la ruta
 
 const VentasList = () => {
-  const { data: sales, loading, error } = useSales()
+  const { data: sales, loading, error, refetch } = useSales()
   const [selectedSale, setSelectedSale] = useState(null)
+  const [isOpenRegistrar, setIsOpenRegistrar] = useState(false)
 
   const statWidgets = [
     {
@@ -16,14 +18,14 @@ const VentasList = () => {
     },
     {
       title: 'Ventas Pagadas',
-      value: sales.filter(s => s.estado_pago === 'Pagado').length,
+      value: sales.filter(s => s.estado_pago?.toLowerCase() === 'pagado').length,
       icon: CreditCard,
       color: 'bg-emerald-100',
       iconColor: 'text-emerald-600',
     },
     {
       title: 'Ventas Entregadas',
-      value: sales.filter(s => s.estado_entrega === 'Entregado').length,
+      value: sales.filter(s => s.estado_entrega?.toLowerCase() === 'entregado').length,
       icon: Truck,
       color: 'bg-blue-100',
       iconColor: 'text-blue-600',
@@ -46,20 +48,22 @@ const VentasList = () => {
     })
   }
 
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'pagado':
-      case 'entregado':
-        return 'bg-emerald-100 text-emerald-700'
-      case 'pendiente':
-        return 'bg-amber-100 text-amber-700'
-      case 'en camino':
-      case 'en proceso':
-        return 'bg-blue-100 text-blue-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
-    }
+const getStatusColor = (status) => {
+  const s = status?.toLowerCase() || ''
+
+  switch (s) {
+    case 'pagado':
+    case 'entregado':
+      return 'bg-emerald-100 text-emerald-700'
+    case 'pendiente':
+      return 'bg-amber-100 text-amber-700'
+    case 'en camino':
+    case 'en proceso':
+      return 'bg-blue-100 text-blue-700'
+    default:
+      return 'bg-gray-100 text-gray-700'
   }
+}
 
   if (loading) {
     return (
@@ -80,11 +84,19 @@ const VentasList = () => {
 
   return (
     <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Ventas</h1>
-        </div>
-      </div>
+     <div className="flex justify-between items-center mb-8">
+  <div>
+    <h1 className="text-3xl font-bold text-gray-800">Ventas</h1>
+  </div>
+
+  <button
+    onClick={() => setIsOpenRegistrar(true)}
+    className="bg-[#0a332a] text-white px-5 py-3 rounded-2xl font-medium flex items-center gap-2 hover:bg-[#0a332a]/90 transition-all shadow-sm"
+  >
+    <ShoppingBag className="w-5 h-5" />
+    Nueva Venta
+  </button>
+</div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {statWidgets.map((widget, index) => {
@@ -304,6 +316,16 @@ const VentasList = () => {
           </div>
         </div>
       )}
+      {isOpenRegistrar && (
+  <RegistrarVenta
+  isOpen={isOpenRegistrar}
+  onClose={() => setIsOpenRegistrar(false)}
+  onSuccess={() => {
+    setIsOpenRegistrar(false)
+    window.location.reload() 
+  }}
+/>
+)}
     </div>
   )
 }
