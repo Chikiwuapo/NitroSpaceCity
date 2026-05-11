@@ -35,15 +35,9 @@ const ClienteForm = ({ isOpen, onClose, clienteToEdit, onSuccess }) => {
         })
       } else {
         setForm({
-          primer_nombre: '',
-          segundo_nombre: '',
-          primer_apellido: '',
-          segundo_apellido: '',
-          dni: '',
-          telefono: '',
-          correo: '',
-          direccion: '',
-          url_img: '',
+          primer_nombre: '', segundo_nombre: '', primer_apellido: '',
+          segundo_apellido: '', dni: '', telefono: '',
+          correo: '', direccion: '', url_img: '',
         })
       }
     } else {
@@ -51,31 +45,38 @@ const ClienteForm = ({ isOpen, onClose, clienteToEdit, onSuccess }) => {
     }
   }, [isOpen, clienteToEdit])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    try {
-      setIsSubmitting(true)
+  // Lógica para evitar enviar cadenas vacías ""
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    setIsSubmitting(true);
+    const dataToSend = Object.keys(form).reduce((acc, key) => {
+      const value = form[key];
+      acc[key] = (typeof value === 'string' && value.trim() === '') ? null : value;
       
-      if (clienteToEdit) {
-        await clientesApi.updateCliente(clienteToEdit.id, form)
-      } else {
-        await clientesApi.createCliente(form)
-      }
+      return acc;
+    }, {});
 
-      setShowSuccess(true)
-      setTimeout(() => {
-        setShowSuccess(false)
-        onClose()
-        onSuccess?.()
-      }, 1500)
-    } catch (error) {
-      console.error('Error:', error)
-      alert(`Error al ${clienteToEdit ? 'actualizar' : 'crear'} cliente`)
-    } finally {
-      setIsSubmitting(false)
+    if (clienteToEdit) {
+      await clientesApi.updateCliente(clienteToEdit.id, dataToSend);
+    } else {
+      await clientesApi.createCliente(dataToSend);
     }
-  }
 
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+      onClose();
+      onSuccess?.();
+    }, 1500);
+  } catch (error) {
+    console.error('Error detallado:', error);
+    const msg = error.response?.data?.message || "Error al procesar la solicitud";
+    alert(msg);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   if (!isOpen) return null
 
   return (

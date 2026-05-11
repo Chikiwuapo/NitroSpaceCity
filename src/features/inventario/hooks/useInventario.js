@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useCallback} from 'react';
 import { inventarioApi } from '../services/inventarioService';
 
 export const useInventario = () => {
@@ -6,6 +6,19 @@ export const useInventario = () => {
   const [filteredVehiculos, setFilteredVehiculos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await inventarioApi.getInventario();
+      setVehiculos(data);
+      setFilteredVehiculos(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Error al cargar el inventario');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   const [filters, setFilters] = useState({
     search: '',
     marca: '',
@@ -16,6 +29,9 @@ export const useInventario = () => {
     precioMax: ''
   });
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -111,6 +127,7 @@ export const useInventario = () => {
     estados,
     transmisiones,
     handleFilterChange,
+    refetch: fetchData,
     resetFilters
   };
 };

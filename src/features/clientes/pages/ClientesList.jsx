@@ -3,6 +3,8 @@ import { Plus, Users, TrendingUp, Edit, Trash2 } from 'lucide-react'
 import { useClientes } from '../hooks/useClientes'
 import { clientesApi } from '../services/clientesApi'
 import ClienteForm from '../components/ClienteForm'
+import ClientesFiltros from '../components/ClientesFiltro';
+import ConfirmModal from '../components/ConfirmModal';
 
 const statWidgets = [
   {
@@ -29,12 +31,23 @@ const ClientesList = () => {
   const { clientes, loading, error, refetch } = useClientes()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [clienteToEdit, setClienteToEdit] = useState(null)
+const [searchTerm, setSearchTerm] = useState('');
+const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [idToDelete, setIdToDelete] = useState(null);
+  const clientesFiltrados = clientes.filter(c => {
+    const search = searchTerm.toLowerCase();
+    const nombreCompleto = `${c.primer_nombre} ${c.segundo_nombre} ${c.primer_apellido} ${c.segundo_apellido}`.toLowerCase();
+    const dni = (c.dni || '').toLowerCase();
+    const correo = (c.correo || '').toLowerCase();
+
+    return nombreCompleto.includes(search) || dni.includes(search) || correo.includes(search);
+  });
 
   const stats = {
     totalClientes: clientes.length,
     clientesActivos: Math.round(clientes.length * 0.7),
     tasaRetencion: 87.5,
-  }
+  };
 
   const handleEdit = (cliente) => {
     setClienteToEdit(cliente)
@@ -52,6 +65,20 @@ const ClientesList = () => {
       }
     }
   }
+  const handleDeleteClick = (id) => {
+    setIdToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await clientesApi.deleteCliente(idToDelete);
+      refetch();
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+    }
+  };
 
   return (
     <div className="p-8">
@@ -116,7 +143,7 @@ const ClientesList = () => {
           )
         })}
       </div>
-
+<ClientesFiltros searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       {/* Tabla */}
       <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -151,14 +178,14 @@ const ClientesList = () => {
                     Cargando clientes...
                   </td>
                 </tr>
-              ) : clientes.length === 0 ? (
+              ) : clientesFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-6">
                     No hay clientes
                   </td>
                 </tr>
               ) : (
-                clientes.map((c) => {
+                clientesFiltrados.map((c) => {
                   const getFullName = () => {
                     const names = [c.primer_nombre, c.segundo_nombre, c.primer_apellido, c.segundo_apellido].filter(Boolean)
                     return names.join(' ')
@@ -172,20 +199,29 @@ const ClientesList = () => {
                   return (
                     <tr key={c.id} className="hover:bg-gray-50 transition-colors duration-200">
                       <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          {c.url_img ? (
-                            <img
-                              src={c.url_img}
-                              alt={getFullName()}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-[#0a332a] flex items-center justify-center text-white font-semibold text-sm">
-                              {getInitials()}
-                            </div>
-                          )}
-                        </div>
-                      </td>
+  <div className="flex items-center">
+    <div className="relative w-10 h-10">
+      {c.url_img ? (
+        <img
+          src={c.url_img}
+          alt={getFullName()}
+          className="w-10 h-10 rounded-full object-cover"
+          // Si la URL es inválida o el dominio no existe, se ocultara la imagen
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
+          }}
+        />
+      ) : null}
+      <div 
+        className="w-10 h-10 rounded-full bg-[#0a332a] flex items-center justify-center text-white font-semibold text-sm"
+        style={{ display: c.url_img ? 'none' : 'flex' }}
+      >
+        {getInitials()}
+      </div>
+    </div>
+  </div>
+</td>
                       <td className="px-6 py-4">
                         <span className="text-sm font-medium text-gray-800">{getFullName()}</span>
                       </td>
@@ -220,7 +256,7 @@ const ClientesList = () => {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button 
-                            onClick={() => handleDelete(c.id)}
+                            onClick={() => handleDeleteClick(c.id)}
                             className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -244,6 +280,13 @@ const ClientesList = () => {
           refetch()
           setClienteToEdit(null)
         }}
+      />
+      <ConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="¿Eliminar cliente?"
+        message="Esta acción no se puede deshacer. El cliente será borrado permanentemente de la base de datos."
       />
     </div>
   )
