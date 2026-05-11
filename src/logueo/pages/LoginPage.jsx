@@ -1,62 +1,58 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, Loader2 } from 'lucide-react'
-import fondoImg from '../assets/image.png';
+import fondoImg from '../../assets/image.png'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
+import { authService } from '../services/authService'
+import { ROLES } from '../roles'
 
-const Login = () => {
+const LoginPage = () => {
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
   const navigate = useNavigate()
 
-useEffect(() => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    navigate('/dashboard', { replace: true })
-  }
-}, [navigate])
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate])
 
   const handleLogin = async () => {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch(
-        'https://faithful-healing-production-9e06.up.railway.app/api/user/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ correo, contrasena }),
-        }
-      )
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.message || 'Credenciales incorrectas')
-      
+      const data = await authService.login({ correo, contrasena })
+
       const token = data.token || data.access_token || data.jwt
       if (!token) throw new Error('No se recibió token')
 
       localStorage.setItem('token', token)
+
       const getRoleName = (id) => {
-  switch (id) {
-    case 1:
-      return 'Administrador'
-    case 2:
-      return 'Empleado'
-    case 3:
-      return 'Mecánico'
-    default:
-      return 'Sin rol'
-  }
-}
+        switch (id) {
+          case 1:
+            return ROLES.ADMIN
+          case 2:
+            return ROLES.EMPLEADO
+          case 3:
+            return ROLES.MECANICO
+          default:
+            return 'Sin rol'
+        }
+      }
 
-if (data.user) {
-  const userFormatted = {
-    ...data.user,
-    role: getRoleName(data.user.id_rol),
-  }
+      if (data.user) {
+        const userFormatted = {
+          ...data.user,
+          role: getRoleName(data.user.id_rol),
+        }
+        localStorage.setItem('user', JSON.stringify(userFormatted))
+      }
 
-  localStorage.setItem('user', JSON.stringify(userFormatted))
-}
       navigate('/dashboard')
     } catch (err) {
       setError(err.message)
@@ -67,13 +63,13 @@ if (data.user) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1a3c34] p-4 md:p-0">
-      
+
       {/* Tarjeta Principal */}
       <div className="w-full max-w-5xl h-[600px] bg-[#244c42] rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row relative">
-        
+
         {/* LADO IZQUIERDO (BLANCO CON CURVA) */}
         <div className="relative bg-white w-full md:w-[55%] h-full flex flex-col p-10 z-10 rounded-br-[80px] md:rounded-br-[200px] overflow-hidden">
-          
+
          {/* Círculos decorativos resaltados en el lado blanco */}
 <div className="absolute -top-20 -left-20 w-96 h-96 bg-emerald-600 rounded-full -z-10"></div>
 <div className="absolute top-1/2 -right-20 w-64 h-64 bg-emerald-500 rounded-full -z-10"></div>
@@ -104,11 +100,11 @@ if (data.user) {
 
         {/* LADO DERECHO (FORMULARIO) */}
         <div className="w-full md:w-[45%] h-full flex flex-col justify-center px-12 md:px-16 text-white py-10 relative overflow-hidden">
-          
+
           {/* Burbujas decorativas en el lado verde oscuro */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-400/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          
+
           <div className="relative z-10">
             <h1 className="text-4xl font-semibold mb-8">Login</h1>
 
@@ -140,7 +136,13 @@ if (data.user) {
                   className="w-full bg-[#1a3c34] border-none rounded-full py-3 px-6 text-sm focus:ring-2 ring-emerald-500 outline-none placeholder:text-gray-500"
                 />
                 <div className="text-right mt-2">
-                  <button className="text-[10px] text-emerald-400 hover:underline">Forgot Password?</button>
+                  <button
+                    type="button"
+                    onClick={() => setForgotPasswordOpen(true)}
+                    className="text-[10px] text-emerald-400 hover:underline"
+                  >
+                    Olvidaste tu Contraseña?
+                  </button>
                 </div>
               </div>
 
@@ -152,9 +154,9 @@ if (data.user) {
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {loading ? 'Cargando...' : 'Login'}
               </button>
-              
+
               <div className="text-center mt-8 space-y-4">
-                 <button className="text-[10px] text-emerald-400 hover:underline block w-full">Terms and Services</button>
+                 <button className="text-[10px] text-emerald-400 hover:underline block w-full">Términos y Servicios</button>
                  <div className="text-[10px] text-gray-400">
                   Have a problem? <span className="text-emerald-400 cursor-pointer">Contact us</span>
                  </div>
@@ -163,8 +165,14 @@ if (data.user) {
           </div>
         </div>
       </div>
+
+      {/* Modal de recuperación de contraseña */}
+      <ForgotPasswordModal
+        isOpen={forgotPasswordOpen}
+        onClose={() => setForgotPasswordOpen(false)}
+      />
     </div>
   )
 }
 
-export default Login
+export default LoginPage

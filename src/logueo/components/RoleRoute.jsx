@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { PERMISSIONS } from './roles'
+import { PERMISSIONS } from '../roles'
 
 export const RoleRoute = ({ children }) => {
   const location = useLocation()
