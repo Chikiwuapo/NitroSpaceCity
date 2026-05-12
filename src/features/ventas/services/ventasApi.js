@@ -1,4 +1,35 @@
+const BASE_URL = 'https://faithful-healing-production-9e06.up.railway.app/api/sale'
+
+const getToken = () => {
+  const token = localStorage.getItem('token')
+  if (!token) throw new Error('No hay token')
+  return token
+}
+
 export const ventasApi = {
+  getSaleById: async (id) => {
+    const response = await fetch(`${BASE_URL}/getById/${id}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    })
+    if (!response.ok) throw new Error('Error al obtener la venta')
+    const json = await response.json()
+    return json.data || json
+  },
+
+  updateVenta: async (id, venta) => {
+    const response = await fetch(`${BASE_URL}/update/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify(venta),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.message || json.error || 'Error al actualizar venta')
+    return json
+  },
+
   getSales: async () => {
     try {
       const token = localStorage.getItem('token');
@@ -8,7 +39,7 @@ export const ventasApi = {
       }
 
       const response = await fetch(
-        'https://faithful-healing-production-9e06.up.railway.app/api/sale/getAll',
+        `${BASE_URL}/getAll`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -28,49 +59,55 @@ export const ventasApi = {
       }
 
       return data.map((v) => {
-        // Manejar el caso donde v.cliente podría ser un objeto o una cadena
-        let clienteData = v.cliente || {};
-        
-        // Si v.cliente es una cadena (ej: "cliente2"), intentar usarla como nombre
-        if (typeof v.cliente === 'string') {
+        // El backend puede devolver el cliente como:
+        // a) objeto anidado: v.cliente = { primer_nombre, primer_apellido, ... }
+        // b) cadena: v.cliente = "Juan Lopez"
+        // c) null/undefined (solo viene id_cliente)
+        let clienteData = {};
+        if (v.cliente && typeof v.cliente === 'object') {
+          clienteData = v.cliente;
+        } else if (typeof v.cliente === 'string' && v.cliente.trim()) {
           clienteData = { nombre_completo: v.cliente };
         }
 
-        const usuario = v.usuario || {};
-        const estadoPago = v.estadoPago || {};
-        const estadoEntrega = v.estadoEntrega || {};
-        const tipoComprobante = v.tipoComprobante || {};
+        // El backend puede devolver el usuario como objeto o cadena
+        let usuarioData = {};
+        if (v.usuario && typeof v.usuario === 'object') {
+          usuarioData = v.usuario;
+        } else if (typeof v.usuario === 'string' && v.usuario.trim()) {
+          usuarioData = { nombre_completo: v.usuario };
+        }
+
+        const estadoPago = v.estadoPago || v.estado_pago_obj || {};
+        const estadoEntrega = v.estadoEntrega || v.estado_entrega_obj || {};
+        const tipoComprobante = v.tipoComprobante || v.tipo_comprobante_obj || {};
         const vehiculos = v.vehiculos || [];
 
         return {
           id: v.id,
+          id_cliente: v.id_cliente || clienteData.id || '',
+          id_usuario: v.id_usuario || usuarioData.id || '',
 
           cliente: {
-            id: clienteData.id,
-            primer_nombre: clienteData.primer_nombre || '',
-            segundo_nombre: clienteData.segundo_nombre || '',
-            primer_apellido: clienteData.primer_apellido || '',
-            segundo_apellido: clienteData.segundo_apellido || '',
+            id: clienteData.id || v.id_cliente || '',
             nombre_completo:
-              // Priorizar nombres individuales si existen (más confiable)
               `${clienteData.primer_nombre || ''} ${clienteData.segundo_nombre || ''} ${clienteData.primer_apellido || ''} ${clienteData.segundo_apellido || ''}`.trim() ||
               clienteData.nombre_completo ||
               clienteData.nombre ||
               clienteData.name ||
               `${clienteData.nombres || ''} ${clienteData.apellidos || ''}`.trim() ||
-              clienteData.razon_social ||
-              'Cliente',
+              'Sin nombre',
             img_url:
               clienteData.url_img ||
               clienteData.img_url ||
               clienteData.imagen ||
-              'https://via.placeholder.com/80?text=Cliente',
+              `https://placehold.co/80x80/e2e8f0/64748b?text=C`,
           },
 
           usuario:
-            usuario.nombre_completo ||
-            `${usuario.primer_nombre || ''} ${usuario.segundo_nombre || ''} ${usuario.primer_apellido || ''} ${usuario.segundo_apellido || ''}`.trim() ||
-            usuario.nombre ||
+            `${usuarioData.primer_nombre || ''} ${usuarioData.segundo_nombre || ''} ${usuarioData.primer_apellido || ''} ${usuarioData.segundo_apellido || ''}`.trim() ||
+            usuarioData.nombre_completo ||
+            usuarioData.nombre ||
             '',
 
           tipo_comprobante:
@@ -110,23 +147,61 @@ export const ventasApi = {
           },
 
           detalle: vehiculos.map((item) => {
-            const vehiculo = item.vehiculo || {};
-            const modelo = vehiculo.modelo || {};
-            const marca = modelo.marca || {};
+            // El backend puede devolver dos estructuras distintas:
+            // 1) Estructura ANIDADA: item = { vehiculo: { modelo: { nombre, marca: { nombre } }, placa, precio_u }, cantidad, subtotal }
+            // 2) Estructura PLANA (GET /getAll actual): item = { id_vehiculo, anio, url_img, precio_u }
+            // Se detecta automáticamente cuál es y se extraen los campos correctamente.
+
+            const hasNested = item.vehiculo && typeof item.vehiculo === 'object';
+
+            const vehiculo  = hasNested ? item.vehiculo          : item;
+            const modeloObj = hasNested ? (vehiculo.modelo || {}) : {};
+            const marcaObj  = hasNested ? (modeloObj.marca || {}) : {};
+
+            // Nombre del modelo: intenta anidado, luego plano
+            const modeloNombre =
+              modeloObj.nombre ||
+              vehiculo.modelo   ||
+              '';
+
+            // Nombre de la marca: intenta anidado
+            const marcaNombre  =
+              marcaObj.nombre  ||
+              vehiculo.marca   ||
+              '';
+
+            // Precio unitario
+            const precioU = Number(
+              vehiculo.precio_u  ??
+              vehiculo.precio    ??
+              item.precio_u      ??
+              0
+            );
+
+            // Cantidad: puede venir en item o no existir en estructura plana (default 1)
+            const cantidad = item.cantidad ?? 1;
+
+            // Subtotal por ítem
+            const subtotalItem = Number(
+              item.subtotal ??
+              (precioU * cantidad)
+            );
 
             return {
-              id: item.id,
-              descripcion: modelo.nombre || 'Vehículo',
-              marca: marca.nombre || '',
-              modelo: modelo.nombre || '',
-              placa: vehiculo.placa || '',
-              color: vehiculo.color || '',
-              anio: vehiculo.anio || '',
-              transmision: vehiculo.transmision || '',
-              combustible: vehiculo.tipo_combustible || '',
-              cantidad: item.cantidad,
-              precio_unitario: vehiculo.precio || vehiculo.precio_u || 0,
-              subtotal: item.subtotal || (vehiculo.precio || vehiculo.precio_u || 0) * item.cantidad,
+              id:            item.id || item.id_vehiculo,
+              id_vehiculo:   item.id_vehiculo || vehiculo.id || '',
+              descripcion:   modeloNombre || 'Vehículo',
+              marca:         marcaNombre,
+              modelo:        modeloNombre,
+              placa:         vehiculo.placa  || '',
+              color:         vehiculo.color  || '',
+              anio:          vehiculo.anio   || item.anio || '',
+              url_img:       vehiculo.url_img || item.url_img || '',
+              transmision:   vehiculo.transmision     || '',
+              combustible:   vehiculo.tipo_combustible || '',
+              cantidad,
+              precio_unitario: precioU,
+              subtotal:        subtotalItem,
             };
           }) || [],
         };
@@ -146,7 +221,7 @@ export const ventasApi = {
       }
 
       const response = await fetch(
-        'https://faithful-healing-production-9e06.up.railway.app/api/sale/register',
+        `${BASE_URL}/register`,
         {
           method: 'POST',
           headers: {

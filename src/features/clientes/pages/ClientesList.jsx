@@ -5,6 +5,7 @@ import { clientesApi } from '../services/clientesApi'
 import ClienteForm from '../components/ClienteForm'
 import ClientesFiltros from '../components/ClientesFiltro';
 import ConfirmModal from '../components/ConfirmModal';
+import { Pagination } from '../../../shared/components/Pagination';
 
 const statWidgets = [
   {
@@ -34,6 +35,13 @@ const ClientesList = () => {
 const [searchTerm, setSearchTerm] = useState('');
 const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 7;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const clientesFiltrados = clientes.filter(c => {
     const search = searchTerm.toLowerCase();
     const nombreCompleto = `${c.primer_nombre} ${c.segundo_nombre} ${c.primer_apellido} ${c.segundo_apellido}`.toLowerCase();
@@ -48,6 +56,12 @@ const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     clientesActivos: Math.round(clientes.length * 0.7),
     tasaRetencion: 87.5,
   };
+
+  const totalPages = Math.ceil(clientesFiltrados.length / ITEMS_PER_PAGE);
+  const currentItems = clientesFiltrados.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleEdit = (cliente) => {
     setClienteToEdit(cliente)
@@ -81,24 +95,8 @@ const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   };
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Gestión de Clientes
-        </h1>
-
-        <button 
-          onClick={() => {
-            setClienteToEdit(null)
-            setIsFormOpen(true)
-          }}
-          className="bg-[#0a332a] text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 hover:bg-[#0d4438] transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Agregar Cliente
-        </button>
-      </div>
+    <div className="p-8 h-full flex flex-col">
+      {/* Header removido porque el botón pasa al filtro */}
 
       {/* Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -143,10 +141,25 @@ const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
           )
         })}
       </div>
-<ClientesFiltros searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+<ClientesFiltros 
+  searchTerm={searchTerm} 
+  setSearchTerm={setSearchTerm} 
+  actionButton={
+    <button 
+      onClick={() => {
+        setClienteToEdit(null)
+        setIsFormOpen(true)
+      }}
+      className="bg-[#0a332a] text-white px-6 py-3 rounded-2xl font-medium flex items-center justify-center w-full md:w-auto gap-2 hover:bg-[#0d4438] transition-colors whitespace-nowrap"
+    >
+      <Plus className="w-5 h-5" />
+      Agregar Cliente
+    </button>
+  }
+/>
       {/* Tabla */}
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -178,14 +191,14 @@ const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
                     Cargando clientes...
                   </td>
                 </tr>
-              ) : clientesFiltrados.length === 0 ? (
+              ) : currentItems.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-6">
                     No hay clientes
                   </td>
                 </tr>
               ) : (
-                clientesFiltrados.map((c) => {
+                currentItems.map((c) => {
                   const getFullName = () => {
                     const names = [c.primer_nombre, c.segundo_nombre, c.primer_apellido, c.segundo_apellido].filter(Boolean)
                     return names.join(' ')
@@ -270,6 +283,11 @@ const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
             </tbody>
           </table>
         </div>
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       <ClienteForm 

@@ -1,13 +1,47 @@
-import { useState, useRef } from 'react'
-import { ShoppingBag, CreditCard, Truck, Calendar, FileText, ChevronRight, Loader2, AlertCircle, User, FileDown } from 'lucide-react'
+import { useState, useRef, useMemo, useEffect } from 'react'
+import { ShoppingBag, CreditCard, Truck, Calendar, FileText, ChevronRight, Loader2, AlertCircle, User, FileDown, Pencil, Search } from 'lucide-react'
 import { useSales } from '../hooks/useSales'
-import RegistrarVenta from '../components/RegistroVenta' // ajusta la ruta
+import RegistrarVenta from '../components/RegistroVenta'
+import EditarVenta from '../components/EditarVenta'
+import { Pagination } from '../../../shared/components/Pagination'
 
 const VentasList = () => {
   const { data: sales, loading, error, refetch } = useSales()
   const [selectedSale, setSelectedSale] = useState(null)
   const [isOpenRegistrar, setIsOpenRegistrar] = useState(false)
+  const [editSaleId, setEditSaleId] = useState(null)
   const printRef = useRef(null)
+
+  const [filterClient, setFilterClient] = useState('')
+  const [filterDate, setFilterDate] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 7
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterClient, filterDate]);
+
+  const filteredSales = useMemo(() => {
+    return sales.filter((sale) => {
+      const clientName = typeof sale.cliente === 'string'
+        ? sale.cliente
+        : (sale.cliente?.nombre_completo || '');
+        
+      const matchClient = filterClient === '' || 
+        String(clientName).toLowerCase().includes(filterClient.toLowerCase()) ||
+        String(sale.nro_comprobante || '').toLowerCase().includes(filterClient.toLowerCase());
+      
+      const matchDate = filterDate === '' || (sale.fecha_venta && sale.fecha_venta.startsWith(filterDate));
+
+      return matchClient && matchDate;
+    })
+  }, [sales, filterClient, filterDate])
+
+  const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
+  const currentItems = filteredSales.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handlePrint = () => {
     window.print()
@@ -94,20 +128,8 @@ const getStatusColor = (status) => {
   }
 
   return (
-    <div className="p-8">
-     <div className="flex justify-between items-center mb-8">
-  <div>
-    <h1 className="text-3xl font-bold text-gray-800">Ventas</h1>
-  </div>
-
-  <button
-    onClick={() => setIsOpenRegistrar(true)}
-    className="bg-[#0a332a] text-white px-5 py-3 rounded-2xl font-medium flex items-center gap-2 hover:bg-[#0a332a]/90 transition-all shadow-sm"
-  >
-    <ShoppingBag className="w-5 h-5" />
-    Nueva Venta
-  </button>
-</div>
+    <div className="p-8 h-full flex flex-col overflow-hidden">
+      {/* Header removido, el botón va a los filtros */}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {statWidgets.map((widget, index) => {
@@ -130,8 +152,46 @@ const getStatusColor = (status) => {
         })}
       </div>
 
-      <div className="bg-white rounded-[32px] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Filtros */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por cliente o comprobante..."
+            value={filterClient}
+            onChange={(e) => setFilterClient(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0a332a] focus:border-transparent outline-none"
+          />
+        </div>
+        <div className="relative w-full md:w-auto">
+          <Calendar className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10 pointer-events-none" />
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-full md:w-auto pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0a332a] focus:border-transparent outline-none"
+          />
+        </div>
+        {(filterClient || filterDate) && (
+          <button
+            onClick={() => { setFilterClient(''); setFilterDate(''); }}
+            className="px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors whitespace-nowrap"
+          >
+            Limpiar
+          </button>
+        )}
+        <button
+          onClick={() => setIsOpenRegistrar(true)}
+          className="bg-[#0a332a] text-white px-5 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-[#0a332a]/90 transition-all shadow-sm whitespace-nowrap w-full md:w-auto ml-auto"
+        >
+          <ShoppingBag className="w-4 h-4" />
+          Nueva Venta
+        </button>
+      </div>
+
+      <div className="bg-white rounded-[32px] shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -156,26 +216,34 @@ const getStatusColor = (status) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {sales.map((sale) => (
-                <tr
-                  key={sale.id}
-                  className="hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => setSelectedSale(sale)}
-                >
+              {currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-6 text-gray-500">
+                    No hay ventas registradas
+                  </td>
+                </tr>
+              ) : (
+                currentItems.map((sale) => (
+                  <tr
+                    key={sale.id}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedSale(sale)}
+                  >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={sale.cliente?.img_url || sale.cliente?.url_img || 'https://via.placeholder.com/80?text=Cliente'}
-                        alt={sale.cliente?.nombre_completo || sale.cliente?.name || 'Cliente'}
+                        src={sale.cliente?.img_url || sale.cliente?.url_img || 'https://placehold.co/48x48/e2e8f0/64748b?text=C'}
+                        alt={sale.cliente?.nombre_completo || 'Cliente'}
                         className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
+                        onError={(e) => { e.target.src = 'https://placehold.co/48x48/e2e8f0/64748b?text=C' }}
                       />
                       <div>
                         <p className="font-semibold text-gray-800">
-                          {typeof sale.cliente === 'string' ? sale.cliente : (sale.cliente?.nombre_completo || 'Cliente')}
+                          {sale.cliente?.nombre_completo || 'Sin nombre'}
                         </p>
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                           <User className="w-3 h-3" />
-                          {sale.usuario}
+                          {sale.usuario || 'Vendedor'}
                         </p>
                       </div>
                     </div>
@@ -215,10 +283,23 @@ const getStatusColor = (status) => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditSaleId(sale.id)
+                        }}
+                        className="p-2 hover:bg-[#0a332a]/10 rounded-lg transition-colors text-[#0a332a]"
+                        title="Editar venta"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -254,17 +335,18 @@ const getStatusColor = (status) => {
 
               <div className="flex items-center gap-4 mb-6">
                 <img
-                  src={selectedSale.cliente?.img_url || selectedSale.cliente?.url_img || 'https://via.placeholder.com/80?text=Cliente'}
-                  alt={typeof selectedSale.cliente === 'string' ? selectedSale.cliente : (selectedSale.cliente?.nombre_completo || 'Cliente')}
+                  src={selectedSale.cliente?.img_url || selectedSale.cliente?.url_img || 'https://placehold.co/80x80/e2e8f0/64748b?text=C'}
+                  alt={selectedSale.cliente?.nombre_completo || 'Cliente'}
                   className="w-20 h-20 rounded-full object-cover border-2 border-gray-100"
+                  onError={(e) => { e.target.src = 'https://placehold.co/80x80/e2e8f0/64748b?text=C' }}
                 />
                 <div>
                   <p className="text-xl font-bold text-gray-800">
-                    {typeof selectedSale.cliente === 'string' ? selectedSale.cliente : (selectedSale.cliente?.nombre_completo || 'Cliente')}
+                    {selectedSale.cliente?.nombre_completo || 'Sin nombre'}
                   </p>
                   <p className="text-gray-500 flex items-center gap-1">
                     <User className="w-4 h-4" />
-                    Vendedor: {selectedSale.usuario || 'Vendedor'}
+                    Vendedor: {selectedSale.usuario || 'No disponible'}
                   </p>
                 </div>
               </div>
@@ -295,25 +377,41 @@ const getStatusColor = (status) => {
               <div className="bg-[#0a332a]/5 rounded-2xl p-6 mb-6">
                 <h3 className="font-bold text-gray-800 mb-4">Detalle de Productos</h3>
                 <div className="space-y-3">
-                  {selectedSale.detalle.map((item) => (
-                    <div key={item.id} className="bg-white rounded-xl p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-gray-800">
-                            {item.marca && item.modelo ? `${item.marca} ${item.modelo}` : item.descripcion}
-                          </p>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs text-gray-500">
-                            {item.placa && <p><span className="font-medium">Placa:</span> {item.placa}</p>}
-                            {item.color && <p><span className="font-medium">Color:</span> {item.color}</p>}
-                            {item.anio && <p><span className="font-medium">Año:</span> {item.anio}</p>}
-                            {item.transmision && <p><span className="font-medium">Transmisión:</span> {item.transmision}</p>}
-                            {item.combustible && <p><span className="font-medium">Combustible:</span> {item.combustible}</p>}
-                            <p><span className="font-medium">Cantidad:</span> {item.cantidad}</p>
+                  {selectedSale.detalle.map((item, idx) => (
+                    <div key={item.id || item.id_vehiculo || idx} className="bg-white rounded-xl p-4">
+                      <div className="flex gap-4">
+                        {/* Imagen del vehículo si está disponible */}
+                        {item.url_img && (
+                          <img
+                            src={item.url_img}
+                            alt={item.descripcion}
+                            className="w-20 h-14 rounded-lg object-cover border flex-shrink-0"
+                            onError={(e) => { e.target.style.display = 'none' }}
+                          />
+                        )}
+                        <div className="flex-1 flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {(item.marca && item.modelo)
+                                ? `${item.marca} ${item.modelo}`
+                                : item.descripcion && item.descripcion !== 'Vehículo'
+                                  ? item.descripcion
+                                  : `Vehículo #${idx + 1}${item.anio ? ` (${item.anio})` : ''}`
+                              }
+                            </p>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs text-gray-500">
+                              {item.anio && <p><span className="font-medium">Año:</span> {item.anio}</p>}
+                              {item.placa && <p><span className="font-medium">Placa:</span> {item.placa}</p>}
+                              {item.color && <p><span className="font-medium">Color:</span> {item.color}</p>}
+                              {item.transmision && <p><span className="font-medium">Transmisión:</span> {item.transmision}</p>}
+                              {item.combustible && <p><span className="font-medium">Combustible:</span> {item.combustible}</p>}
+                              <p><span className="font-medium">Cantidad:</span> {item.cantidad ?? 1}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-gray-800 text-lg">{formatCurrency(item.precio_unitario)}</p>
-                          <p className="text-sm text-gray-500">Subtotal: {formatCurrency(item.subtotal)}</p>
+                          <div className="text-right ml-4">
+                            <p className="font-semibold text-gray-800 text-lg">{formatCurrency(item.precio_unitario)}</p>
+                            <p className="text-sm text-gray-500">Subtotal: {formatCurrency(item.subtotal)}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -353,13 +451,25 @@ const getStatusColor = (status) => {
       )}
       {isOpenRegistrar && (
   <RegistrarVenta
-  isOpen={isOpenRegistrar}
-  onClose={() => setIsOpenRegistrar(false)}
-  onSuccess={() => {
-    setIsOpenRegistrar(false)
-    window.location.reload() 
-  }}
-/>
+    isOpen={isOpenRegistrar}
+    onClose={() => setIsOpenRegistrar(false)}
+    onSuccess={() => {
+      setIsOpenRegistrar(false)
+      refetch()
+    }}
+  />
+)}
+
+{editSaleId && (
+  <EditarVenta
+    isOpen={!!editSaleId}
+    saleId={editSaleId}
+    onClose={() => setEditSaleId(null)}
+    onSuccess={() => {
+      setEditSaleId(null)
+      refetch()
+    }}
+  />
 )}
     </div>
   )

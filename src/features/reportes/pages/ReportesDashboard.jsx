@@ -28,10 +28,6 @@ const ReportesDashboard = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[#f4f6f9]">
       <div className="p-6 flex-shrink-0">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Reportes y Análisis</h1>
-          <p className="text-gray-500">Monitorea el rendimiento de tu concesionaria en tiempo real</p>
-        </div>
         {data && <KPIGrid kpis={data.kpis} />}
       </div>
       <div className="flex-1 px-6 pb-6 flex flex-col">

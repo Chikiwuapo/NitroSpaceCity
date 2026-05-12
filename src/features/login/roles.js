@@ -11,7 +11,6 @@ export const PERMISSIONS = {
     '/compras',
     '/ventas',
     '/usuarios',
-    '/financiamiento',
     '/inventario',
     '/mantenimiento',
     '/notificaciones',

@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Car, Eye, Edit, Trash2, Fuel, Zap, Gauge } from 'lucide-react';
+import { Pagination } from '../../../shared/components/Pagination';
 
 const StatusBadge = ({ estado, idVenta }) => {
   // Mapeo basado en tus fotos de la BD y tu nota
@@ -26,9 +28,22 @@ const StatusBadge = ({ estado, idVenta }) => {
 };
 
 export const InventarioTable = ({ vehiculos, onEdit, onDelete, onView }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 7;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vehiculos]);
+
+  const totalPages = Math.ceil((vehiculos?.length || 0) / ITEMS_PER_PAGE);
+  const currentItems = vehiculos?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  ) || [];
+
   return (
-    <div className="bg-white rounded-[32px] shadow-sm overflow-hidden flex flex-col border border-gray-100">
-      <div className="overflow-x-auto custom-scrollbar">
+    <div className="bg-white rounded-[32px] shadow-sm overflow-hidden flex flex-col border border-gray-100 flex-1 min-h-0 h-full">
+      <div className="overflow-x-auto custom-scrollbar flex-1">
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50/80 sticky top-0 z-10 backdrop-blur-md">
             <tr>
@@ -61,7 +76,7 @@ export const InventarioTable = ({ vehiculos, onEdit, onDelete, onView }) => {
       </td>
     </tr>
   ) : (
-    vehiculos.map((v) => (
+    currentItems.map((v) => (
       <tr
         key={v.id}
         className="hover:bg-gray-50/50 transition-all group"
@@ -188,6 +203,11 @@ export const InventarioTable = ({ vehiculos, onEdit, onDelete, onView }) => {
 </tbody>
         </table>
       </div>
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

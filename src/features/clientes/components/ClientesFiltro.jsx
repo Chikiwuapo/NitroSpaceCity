@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, Filter, X } from 'lucide-react';
 
-const ClientesFiltros = ({ searchTerm, setSearchTerm }) => {
+const ClientesFiltros = ({ searchTerm, setSearchTerm, actionButton }) => {
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm mb-6 border border-gray-100">
       <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -24,6 +24,7 @@ const ClientesFiltros = ({ searchTerm, setSearchTerm }) => {
             </button>
           )}
         </div>
+        {actionButton && <div className="w-full md:w-auto">{actionButton}</div>}
       </div>
       
       {/* Badge de resultados */}

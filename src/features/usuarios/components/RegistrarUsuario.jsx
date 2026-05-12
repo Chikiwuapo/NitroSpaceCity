@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, CreditCard, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { usuariosApi } from '../services/usuariosApi'
 
@@ -21,6 +21,17 @@ const RegistrarUsuario = ({ isOpen, onClose, onUserAdded }) => {
     id_rol: 2, 
     contrasena: ''
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen])
 
   const handleChange = (e) => {
     const { name, value } = e.target

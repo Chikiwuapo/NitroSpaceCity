@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, CheckCircle2, AlertTriangle, XCircle, Clock, Trash2, Check } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useNotificationSystem } from '../features/notificaciones/hooks/useNotificationSystem';
 
 export const DashboardNavbar = () => {
@@ -32,13 +33,32 @@ export const DashboardNavbar = () => {
     return date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const location = useLocation();
+
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path === '/' || path === '/dashboard') return 'Dashboard';
+    if (path.startsWith('/clientes')) return 'Clientes';
+    if (path.startsWith('/inventario')) return 'Inventario';
+    if (path.startsWith('/ventas')) return 'Ventas';
+    if (path.startsWith('/compras')) return 'Compras';
+    if (path.startsWith('/reportes')) return 'Reportes';
+    if (path.startsWith('/usuarios')) return 'Usuarios';
+    if (path.startsWith('/configuracion')) return 'Configuración';
+    return '';
+  };
+
   return (
-    <header className="h-20 px-8 flex items-center justify-end bg-transparent sticky top-0 z-40">
+    <header className="h-20 px-8 flex items-center justify-between bg-[#0a332a] shadow-lg sticky top-0 z-40">
+      <div>
+        <h1 className="text-3xl font-bold text-white tracking-tight">{getPageTitle()}</h1>
+      </div>
+
       <div className="relative" ref={dropdownRef}>
         {/* Campana */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="relative p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-gray-700 hover:bg-white/20 transition-all shadow-sm"
+          className="relative p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all shadow-sm"
         >
           <Bell className="w-6 h-6" />
           {unreadCount > 0 && (

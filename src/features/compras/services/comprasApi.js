@@ -1,9 +1,82 @@
-const BASE_URL = 'https://faithful-healing-production-9e06.up.railway.app/api/buy/';
+const BASE_URL = 'https://faithful-healing-production-9e06.up.railway.app/api/buy';
+
+const getToken = () => {
+  const token = localStorage.getItem('token')
+  if (!token) throw new Error('No hay token')
+  return token
+}
 
 export const comprasApi = {
+  getPurchaseById: async (id) => {
+    try {
+      const url = `${BASE_URL}/getById/${id}`;
+      console.log('🔍 Fetching compra por ID:', url);
+
+      const response = await fetch(url, {
+        headers: { 
+          Authorization: `Bearer ${getToken()}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+      });
+
+      if (!response.ok) throw new Error('Error al obtener la compra');
+      
+      const json = await response.json();
+      const c = json.data || json;
+      
+      console.log('📥 Datos RAW de compra por ID:', c);
+
+      // Mapear igual que en getPurchases para consistencia
+      const vehiculosDetalle = c.vehiculos || [];
+      const proveedor = c.proveedor || {};
+      const moneda = c.moneda || {};
+
+      const mapped = {
+        id: c.id,
+        nro_comprobante: c.nro_comprobante || c.numero_comprobante,
+        serie: c.serie,
+        fecha_compra: c.fecha_compra || c.fecha,
+        subtotal: c.subtotal,
+        igv: c.igv,
+        total: c.total,
+        // Priorizar id_proveedor del root, luego del objeto proveedor
+        proveedor: proveedor.razon_social || proveedor.nombre || c.razon_social || 'Sin proveedor',
+        id_proveedor: c.id_proveedor || proveedor.id,
+        id_tipo_comprobante: c.id_tipo_comprobante,
+        id_moneda: c.id_moneda || 1,
+        moneda: moneda.nombre || (c.id_moneda === 2 ? 'USD' : 'PEN'),
+        detalle: vehiculosDetalle.map(item => {
+          const v = item.vehiculo || item || {};
+          const m = v.modelo || {};
+          const mar = m.marca || {};
+          return {
+            id_vehiculo: item.id_vehiculo || v.id,
+            cantidad: item.cantidad || 1,
+            subtotal: item.subtotal || 0,
+            marca: mar.nombre || v.marca || '',
+            modelo: m.nombre || v.modelo || '',
+            placa: v.placa || '',
+            anio: v.anio || '',
+            url_img: v.url_img || '',
+          };
+        })
+      };
+
+      console.log('📦 Datos MAPEADOS de compra:', mapped);
+      console.log('  - Proveedor ID:', mapped.id_proveedor);
+      console.log('  - Proveedor Nombre:', mapped.proveedor);
+      console.log('  - Vehículos:', mapped.detalle.length);
+      return mapped;
+    } catch (error) {
+      console.error('❌ Error en getPurchaseById:', error);
+      throw error;
+    }
+  },
+
   getPurchases: async () => {
     try {
-      const url = `${BASE_URL}getAll`;
+      const url = `${BASE_URL}/getAll`;
       console.log('🔍 Fetching de:', url);
 
       const response = await fetch(url, {
@@ -31,6 +104,7 @@ export const comprasApi = {
         const estadoEntrega = c.estadoEntrega || {};
         const usuario = c.usuario || {};
         const proveedor = c.proveedor || {};
+        const moneda = c.moneda || {};
 
         return {
           id: c.id,
@@ -48,15 +122,27 @@ export const comprasApi = {
           estado_pago: estadoPago.nombre || c.estado_pago || 'Pendiente',
           estado_entrega: estadoEntrega.nombre || c.estado_entrega || 'Pendiente',
           fecha_pago: c.fecha_pago || null,
-          proveedor: proveedor.razon_social || 'Proveedor',
-          id_proveedor: proveedor.id,
+          // Priorizar id_proveedor del root, luego del objeto proveedor
+          proveedor: proveedor.razon_social || proveedor.nombre || c.razon_social || 'Sin proveedor',
+          id_proveedor: c.id_proveedor || proveedor.id,
           id_tipo_comprobante: c.id_tipo_comprobante,
-          id_moneda: c.id_moneda,
-          detalle: vehiculosDetalle.map(item => ({
-            id_vehiculo: item.id_vehiculo,
-            cantidad: item.cantidad,
-            subtotal: item.subtotal
-          }))
+          id_moneda: c.id_moneda || 1,
+          moneda: moneda.nombre || (c.id_moneda === 2 ? 'USD' : 'PEN'),
+          detalle: vehiculosDetalle.map(item => {
+            const v = item.vehiculo || item || {}
+            const m = v.modelo || {}
+            const mar = m.marca || {}
+            return {
+              id_vehiculo: item.id_vehiculo || v.id,
+              cantidad: item.cantidad || 1,
+              subtotal: item.subtotal || 0,
+              marca: mar.nombre || v.marca || '',
+              modelo: m.nombre || v.modelo || '',
+              placa: v.placa || '',
+              anio: v.anio || '',
+              url_img: v.url_img || '',
+            }
+          })
         };
       });
 
@@ -67,11 +153,9 @@ export const comprasApi = {
 
   registerPurchase: async (purchaseData) => {
     try {
-      // ÚLTIMA ALTERNATIVA LÓGICA: Usar el término técnico 'purchase'
-      // Siguiendo el patrón de /api/sale/register, /api/client/register, etc.
-      const url = 'https://faithful-healing-production-9e06.up.railway.app/api/purchase/register';
+      const url = `${BASE_URL}/register`;
       
-      console.log('--- ENVIANDO COMPRA (INTENTO TÉCNICO: PURCHASE) ---');
+      console.log('--- ENVIANDO COMPRA ---');
       console.log('URL completa:', url);
       console.log('Body:', JSON.stringify(purchaseData, null, 2));
 
@@ -80,7 +164,7 @@ export const comprasApi = {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${getToken()}`,
         },
         body: JSON.stringify(purchaseData),
       });
@@ -88,15 +172,11 @@ export const comprasApi = {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error Response Text:', errorText);
-
-        if (response.status === 404) {
-          throw new Error(`El servidor sigue devolviendo 404 en la ruta técnica: ${url}. Si esto falla, el endpoint de registro tiene un nombre no estándar (ej: /save o /create).`);
-        }
-        
-        throw new Error(`Error ${response.status} en el servidor: ${errorText || 'No se pudo registrar la compra'}`);
+        throw new Error(`Error ${response.status}: ${errorText || 'No se pudo registrar la compra'}`);
       }
 
-      return await response.json();
+      const json = await response.json();
+      return json;
     } catch (error) {
       throw error;
     }
@@ -104,7 +184,7 @@ export const comprasApi = {
 
   updatePurchase: async (id, purchaseData) => {
     try {
-      const url = `${BASE_URL}update/${id}`;
+      const url = `${BASE_URL}/update/${id}`;
       console.log('update en:', url);
 
       const response = await fetch(url, {
@@ -112,17 +192,41 @@ export const comprasApi = {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${getToken()}`,
         },
         body: JSON.stringify(purchaseData),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Error ${response.status} en el servidor: ${errorText || 'No se pudo actualizar la compra'}`);
+        throw new Error(`Error ${response.status}: ${errorText || 'No se pudo actualizar la compra'}`);
       }
 
-      return await response.json();
+      const json = await response.json();
+      return json;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deletePurchase: async (id) => {
+    try {
+      const url = `${BASE_URL}/delete/${id}`;
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || 'No se pudo eliminar la compra'}`);
+      }
+
+      const json = await response.json();
+      return json;
     } catch (error) {
       throw error;
     }

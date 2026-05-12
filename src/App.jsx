@@ -1,9 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { DashboardLayout } from './layouts/DashboardLayout'
 import { AppRoutes } from './app/routes'
-import Login from './logueo/login'
+import { LoginPage, RoleRoute } from './features/login'
 import { PrivateRoute } from './app/PrivateRoute'
-import { RoleRoute } from './logueo/RoleRoute'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -21,7 +20,7 @@ function App() {
     />
 
     {/* Login */}
-    <Route path="/login" element={<Login />} />
+    <Route path="/login" element={<LoginPage />} />
 
     {/* Privadas */}
     <Route

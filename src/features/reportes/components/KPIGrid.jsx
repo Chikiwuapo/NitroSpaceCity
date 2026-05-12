@@ -10,8 +10,10 @@ const iconMap = {
 };
 
 export const KPIGrid = ({ kpis }) => {
+  const gridCols = kpis.length <= 3 ? `xl:grid-cols-${kpis.length}` : 'xl:grid-cols-6';
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${gridCols} gap-6 mb-8`}>
       {kpis.map((kpi) => {
         const Icon = iconMap[kpi.icon];
         const isUp = kpi.trend === 'up';

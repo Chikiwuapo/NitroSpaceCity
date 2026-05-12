@@ -1,7 +1,8 @@
-import { Users, Loader2, AlertCircle, Mail, Phone, UserPlus } from 'lucide-react'
-import { useState } from 'react'
+import { Users, Loader2, AlertCircle, Mail, Phone, UserPlus, Search, Filter } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useUsers } from '../hooks/useUsers'
 import RegistrarUsuario from '../components/RegistrarUsuario'
+import { Pagination } from '../../../shared/components/Pagination'
 
 const getFullName = (user) => {
   const names = [user.firstName, user.secondName, user.lastName].filter(Boolean)
@@ -46,6 +47,29 @@ const UserRowSkeleton = () => (
 const UsuariosList = () => {
   const { users, loading, error } = useUsers()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterRole, setFilterRole] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 7
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterRole])
+
+  const filteredUsers = users.filter(user => {
+    const searchMatch = !searchTerm || 
+      getFullName(user).toLowerCase().includes(searchTerm.toLowerCase()) || 
+      user.dni?.includes(searchTerm);
+    const roleMatch = !filterRole || user.role?.toLowerCase() === filterRole.toLowerCase();
+    
+    return searchMatch && roleMatch;
+  });
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const currentItems = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const statWidgets = [
     {
@@ -75,17 +99,8 @@ const UsuariosList = () => {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Usuarios</h1>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-[#0a332a] text-white px-6 py-3 rounded-2xl hover:bg-[#0a332a]/90 transition-all shadow-lg active:scale-95"
-        >
-          <UserPlus className="w-5 h-5" />
-          <span className="font-semibold">Nuevo Usuario</span>
-        </button>
-      </div>
+    <div className="p-8 h-full flex flex-col overflow-hidden">
+      {/* Header Removido, el botón va a los filtros */}
 
       {/* WIDGETS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -113,9 +128,46 @@ const UsuariosList = () => {
         )}
       </div>
 
+      {/* Filtros */}
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-6 bg-white p-6 rounded-[32px] shadow-sm">
+        <div className="flex-1 flex flex-col md:flex-row gap-4 w-full">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o DNI..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#0a332a]/20 focus:border-[#0a332a] transition-all text-sm shadow-sm"
+            />
+          </div>
+          <div className="relative md:w-48">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#0a332a]/20 focus:border-[#0a332a] transition-all text-sm shadow-sm appearance-none"
+            >
+              <option value="">Todos los roles</option>
+              <option value="administrador">Administrador</option>
+              <option value="empleado">Empleado</option>
+              <option value="mecanico">Mecánico</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Botón Nuevo Usuario */}
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0a332a] px-6 py-3 font-semibold text-white hover:bg-[#0a332a]/90 transition-all shadow-sm whitespace-nowrap w-full md:w-auto"
+        >
+          <UserPlus className="w-5 h-5" /> Nuevo Usuario
+        </button>
+      </div>
+
       {/* TABLA */}
-      <div className="bg-white rounded-[32px] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white rounded-[32px] shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -129,7 +181,13 @@ const UsuariosList = () => {
             <tbody className="bg-white divide-y divide-gray-100">
               {loading 
                 ? [1, 2, 3, 4, 5].map((i) => <UserRowSkeleton key={i} />)
-                : users.map((user) => (
+                : currentItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                        No se encontraron usuarios.
+                      </td>
+                    </tr>
+                  ) : currentItems.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -163,6 +221,11 @@ const UsuariosList = () => {
             </tbody>
           </table>
         </div>
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
 <RegistrarUsuario 

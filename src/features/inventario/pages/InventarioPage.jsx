@@ -149,17 +149,11 @@ const InventarioPage = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#f4f6f9]">
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="p-6">
+    <div className="h-screen flex flex-col bg-[#f4f6f9] overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
+        <div className="p-6 h-full flex flex-col">
           {/* CABECERA */}
-          <div className="flex justify-between items-end mb-6">
-            
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Gestión de Inventario</h1>
-              <p className="text-gray-500">Administra y monitorea tu stock de vehículos</p>
-            </div>
-            
+          <div className="flex justify-end items-end mb-6">
             <button 
               onClick={handleAdd}
               className="bg-[#0a332a] text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 hover:bg-[#0d4438] transition-all shadow-lg"
@@ -181,7 +175,7 @@ const InventarioPage = () => {
           />
 
           {/* TABLA */}
-          <div className="mt-6">
+          <div className="mt-6 flex-1 min-h-0 flex flex-col">
             <InventarioTable 
               vehiculos={filteredVehiculos}
               onEdit={handleEdit}     

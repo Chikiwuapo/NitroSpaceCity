@@ -38,10 +38,15 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
 
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       setTimeout(() => setIsAnimating(true), 10);
     } else {
+      document.body.style.overflow = 'unset';
       setIsAnimating(false);
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
   useEffect(() => {

@@ -1,187 +1,229 @@
-import { Plus, ArrowRight, Leaf, Droplets, MapPin } from 'lucide-react'
-import { StatCard } from '../../../shared/components/StatCard'
+import { ShoppingCart, Users, Package, TrendingUp, ArrowRight, DollarSign, Wrench } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useSales } from '../../ventas/hooks/useSales'
+import { useClientes } from '../../clientes/hooks/useClientes'
+import { useInventario } from '../../inventario/hooks/useInventario'
 
 const Dashboard = () => {
-  const statCardsData = [
+  const navigate = useNavigate()
+  const { data: ventas, loading: loadingVentas } = useSales()
+  const { clientes, loading: loadingClientes } = useClientes()
+  const { vehiculos, loading: loadingInventario } = useInventario()
+
+  const isLoading = loadingVentas || loadingClientes || loadingInventario
+
+  // Asegurar que los datos sean arrays
+  const ventasArray = Array.isArray(ventas) ? ventas : []
+  const clientesArray = Array.isArray(clientes) ? clientes : []
+  const vehiculosArray = Array.isArray(vehiculos) ? vehiculos : []
+
+  // Stats reales
+  const totalVentas = ventasArray.reduce((acc, v) => acc + (Number(v.total) || 0), 0)
+  const ventasEsteMes = ventasArray.filter(v => {
+    if (!v.fecha_venta) return false
+    const fecha = new Date(v.fecha_venta)
+    const hoy = new Date()
+    return fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear()
+  }).length
+  const vehiculosDisponibles = vehiculosArray.filter(v => v.estado === 'Disponible').length
+  const ultimasVentas = ventasArray.slice(0, 4)
+
+  const stats = [
     {
-      title: 'Ventas Totales',
-      value: '$967,570',
-      trend: 'up',
-      percentage: '12.5',
-      chartData: [20, 40, 35, 60, 50, 75, 65],
+      label: 'Total Ventas',
+      value: isLoading ? '...' : ventasArray.length,
+      sub: `${ventasEsteMes} este mes`,
+      icon: TrendingUp,
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
+      path: '/ventas'
     },
     {
-      title: 'Clientes Nuevos',
-      value: '35',
-      unit: 'mes',
-      trend: 'up',
-      percentage: '8.2',
-      chartData: [30, 50, 40, 70, 55, 80, 45],
+      label: 'Clientes',
+      value: isLoading ? '...' : clientesArray.length,
+      sub: 'Registrados',
+      icon: Users,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      path: '/clientes'
     },
     {
-      title: 'Inventario Disponible',
-      value: '75.50',
-      unit: '%',
-      trend: 'down',
-      percentage: '1.8',
-      chartData: [60, 40, 50, 30, 70, 45, 55],
+      label: 'Inventario',
+      value: isLoading ? '...' : vehiculosArray.length,
+      sub: `${vehiculosDisponibles} disponibles`,
+      icon: Package,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      path: '/inventario'
+    },
+    {
+      label: 'Ingresos',
+      value: isLoading ? '...' : `S/ ${(totalVentas / 1000).toFixed(0)}k`,
+      sub: 'Total acumulado',
+      icon: DollarSign,
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      path: '/ventas'
     },
   ]
 
+  const shortcuts = [
+    { label: 'Ventas', icon: TrendingUp, color: 'bg-emerald-600 hover:bg-emerald-700', path: '/ventas' },
+    { label: 'Clientes', icon: Users, color: 'bg-blue-600 hover:bg-blue-700', path: '/clientes' },
+    { label: 'Inventario', icon: Package, color: 'bg-purple-600 hover:bg-purple-700', path: '/inventario' },
+    { label: 'Compras', icon: ShoppingCart, color: 'bg-cyan-600 hover:bg-cyan-700', path: '/compras' },
+    { label: 'Mantenimiento', icon: Wrench, color: 'bg-orange-600 hover:bg-orange-700', path: '/mantenimiento' },
+  ]
+
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-        </div>
-        <button className="bg-sidebar-green text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 hover:opacity-90 transition-opacity">
-          <Plus className="w-5 h-5" />
-          Agregar Widget
-        </button>
-      </div>
+    <div className="h-full overflow-y-auto bg-gray-50">
+      <div className="p-6 space-y-6">
 
-      {/* Top Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {statCardsData.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
-      </div>
-
-      {/* Middle Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Nivel de Inventario */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <p className="text-sm text-gray-500 font-medium mb-4">Nivel de Inventario</p>
-          <div className="text-5xl font-bold text-gray-800 mb-4">72%</div>
-          <div className="relative w-32 h-16 mx-auto mb-4">
-            {/* Semi-circle progress */}
-            <svg className="w-32 h-16" viewBox="0 0 100 50">
-              <path
-                d="M 10 48 A 40 40 0 0 1 90 48"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="8"
-              />
-              <path
-                d="M 10 48 A 40 40 0 0 1 82 20"
-                fill="none"
-                stroke="#34d399"
-                strokeWidth="8"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-          <p className="text-xs text-gray-500 text-center">Índice de Desviación 2%</p>
-        </div>
-
-        {/* Composición de Ventas */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <p className="text-sm text-gray-500 font-medium mb-4">Composición de Ventas</p>
-          <div className="text-5xl font-bold text-gray-800 mb-6">86%</div>
-          <div className="space-y-2 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-              <span className="text-xs text-gray-600">Autos Nuevos</span>
-              <span className="text-xs font-semibold text-gray-800 ml-auto">33%</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
-              <span className="text-xs text-gray-600">Autos Usados</span>
-              <span className="text-xs font-semibold text-gray-800 ml-auto">28%</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-green-400"></div>
-              <span className="text-xs text-gray-600">Servicios</span>
-              <span className="text-xs font-semibold text-gray-800 ml-auto">25%</span>
-            </div>
-          </div>
-          <button className="w-full py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
-            Ver Detalles
-          </button>
-        </div>
-
-        {/* Distribución por Región */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm">
-          <p className="text-sm text-gray-500 font-medium mb-3">Distribución por Región</p>
-          <p className="text-xs text-gray-400 mb-4">Porcentaje de ventas por región</p>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-              <span className="text-xs text-gray-600">Lima - 89%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-pink-500"></div>
-              <span className="text-xs text-gray-600">Arequipa - 62%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              <span className="text-xs text-gray-600">Cusco - 45%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <span className="text-xs text-gray-600">Trujillo - 40%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-              <span className="text-xs text-gray-600">Piura - 38%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-teal-500"></div>
-              <span className="text-xs text-gray-600">Chiclayo - 30%</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-600 bg-gray-100 rounded-xl py-2 px-4">
-            <MapPin className="w-4 h-4 text-gray-400" />
-            <span>Lima - Mayor Volumen</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        {/* Índice de Satisfacción */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
-              <div className="text-white font-bold text-lg">92.5</div>
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-gray-800 mb-1">Índice de Satisfacción del Cliente</p>
-              <p className="text-sm text-gray-500">Puntuación basada en encuestas post-venta</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Comunidad AutoValor */}
-        <div className="bg-gradient-to-br from-emerald-700 to-emerald-900 rounded-3xl p-6 text-white relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-lg font-bold">AutoValor</h2>
-              <ArrowRight className="w-5 h-5" />
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Únete a nuestra comunidad</h3>
-            <div className="flex items-center gap-3 mb-2">
-              <Leaf className="w-4 h-4 text-emerald-300" />
-              <span className="text-sm text-emerald-200">Sistemas de Calidad</span>
-            </div>
-            <div className="flex items-center gap-3 mb-6">
-              <Droplets className="w-4 h-4 text-emerald-300" />
-              <span className="text-sm text-emerald-200">Negocio Global</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full bg-white/20 border-2 border-emerald-700"></div>
-                <div className="w-8 h-8 rounded-full bg-white/20 border-2 border-emerald-700"></div>
-                <div className="w-8 h-8 rounded-full bg-white/20 border-2 border-emerald-700"></div>
+        {/* Stats - Ancho completo */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((s, i) => {
+            const Icon = s.icon
+            return (
+              <div
+                key={i}
+                onClick={() => navigate(s.path)}
+                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`${s.iconBg} p-2 rounded-xl`}>
+                    <Icon className={`w-5 h-5 ${s.iconColor}`} />
+                  </div>
+                  <p className="text-xs text-gray-500 font-medium">{s.label}</p>
+                </div>
+                <p className="text-2xl font-bold text-gray-800">{s.value}</p>
+                <p className="text-xs text-gray-400 mt-1">{s.sub}</p>
               </div>
-              <span className="text-sm text-emerald-200">250k+ personas</span>
-            </div>
-          </div>
-          {/* Decorative background */}
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
-          <div className="absolute right-10 top-10 w-20 h-20 rounded-full bg-white/10 blur-xl"></div>
+            )
+          })}
         </div>
+
+        {/* Accesos rápidos - Ancho completo */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <p className="text-sm font-semibold text-gray-600 mb-3">Accesos rápidos</p>
+          <div className="flex flex-wrap gap-2">
+            {shortcuts.map((s, i) => {
+              const Icon = s.icon
+              return (
+                <button
+                  key={i}
+                  onClick={() => navigate(s.path)}
+                  className={`${s.color} text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {s.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Contenido principal: 2 columnas - Ancho completo */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Últimas ventas */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-800">Últimas Ventas</h2>
+              <button
+                onClick={() => navigate('/ventas')}
+                className="text-xs text-[#0a332a] hover:underline flex items-center gap-1"
+              >
+                Ver todas <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {loadingVentas ? (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            ) : ultimasVentas.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-6">Sin ventas registradas</p>
+            ) : (
+              <div className="space-y-2">
+                {ultimasVentas.map((v) => (
+                  <div key={v.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-800 text-sm truncate">
+                        {typeof v.cliente === 'string' ? v.cliente : v.cliente?.nombre_completo || 'Cliente'}
+                      </p>
+                      <p className="text-xs text-gray-400">{v.serie}-{v.numero_comprobante}</p>
+                    </div>
+                    <p className="font-bold text-[#0a332a] text-sm ml-3 shrink-0">
+                      S/ {Number(v.total).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Inventario reciente */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-800">Inventario</h2>
+              <button
+                onClick={() => navigate('/inventario')}
+                className="text-xs text-[#0a332a] hover:underline flex items-center gap-1"
+              >
+                Ver todo <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {loadingInventario ? (
+              <div className="grid grid-cols-2 gap-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            ) : vehiculos.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-6">Sin vehículos en inventario</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {vehiculosArray.slice(0, 4).map((v) => (
+                  <div key={v.id} className="bg-gray-50 rounded-xl overflow-hidden">
+                    <img
+                      src={v.imagen || 'https://placehold.co/200x100/e2e8f0/64748b?text=Auto'}
+                      alt={v.modelo}
+                      className="w-full h-20 object-cover"
+                      onError={(e) => { e.target.src = 'https://placehold.co/200x100/e2e8f0/64748b?text=Auto' }}
+                    />
+                    <div className="p-2">
+                      <p className="font-semibold text-gray-800 text-xs truncate">{v.marca} {v.modelo}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-[10px] text-gray-400">{v.anio}</p>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          v.estado === 'Disponible' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {v.estado}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Banner inferior - Ancho completo */}
+        <div
+          onClick={() => navigate('/reportes')}
+          className="bg-gradient-to-r from-[#0a332a] to-[#0d4438] text-white rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:opacity-95 transition-opacity"
+        >
+          <div>
+            <p className="font-bold text-lg">Ver Reportes</p>
+            <p className="text-white/70 text-sm mt-0.5">Analiza el rendimiento del negocio</p>
+          </div>
+          <ArrowRight className="w-6 h-6 text-white/60" />
+        </div>
+
       </div>
     </div>
   )

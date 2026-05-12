@@ -12,13 +12,12 @@ import {
   LogOut
 } from 'lucide-react'
 import { NavLink,useNavigate } from 'react-router-dom'
-import { PERMISSIONS } from '../logueo/roles'
+import { PERMISSIONS } from '../features/login/roles'
 export const Sidebar = () => {
   const navItems = [
     { icon: Home, label: 'Inicio', path: '/dashboard' },
     { icon: Users, label: 'Clientes', path: '/clientes' },
     { icon: ShoppingCart, label: 'Compras', path: '/compras' },
-    { icon: DollarSign, label: 'Financiamiento', path: '/financiamiento' },
     { icon: Package, label: 'Inventario', path: '/inventario' },
     { icon: Wrench, label: 'Mantenimiento', path: '/mantenimiento' },
     { icon: Bell, label: 'Notificaciones', path: '/notificaciones' },

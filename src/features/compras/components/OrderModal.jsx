@@ -22,6 +22,7 @@ const OrderModal = ({ isOpen, onClose, onSave, providers }) => {
 
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       const fetchVehicles = async () => {
         try {
           setIsLoadingVehicles(true)
@@ -36,8 +37,12 @@ const OrderModal = ({ isOpen, onClose, onSave, providers }) => {
       }
       fetchVehicles()
     } else {
+      document.body.style.overflow = 'unset';
       setOrder(INITIAL_ORDER)
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen])
 
   const handleChange = (field, value) => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Save, Car, Settings, CheckCircle2, Loader2, Image as ImageIcon, DollarSign, Activity } from 'lucide-react';
 import { useVehiculoForm } from '../hooks/useVehiculoForm';
 
@@ -19,6 +19,18 @@ const VehiculoForm = ({ isOpen, onClose, initialData, onSuccess, isReadOnly }) =
       }, 1500);
     }
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const inputClass = (readOnly) => `

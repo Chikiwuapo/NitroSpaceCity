@@ -1,6 +1,6 @@
 const StatsWidgets = ({ widgets }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       {widgets.map((widget, index) => {
         const Icon = widget.icon
         return (

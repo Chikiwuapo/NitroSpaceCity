@@ -22,6 +22,7 @@ const ClienteForm = ({ isOpen, onClose, clienteToEdit, onSuccess }) => {
 
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       setTimeout(() => setIsAnimating(true), 10)
       if (clienteToEdit) {
         setForm({
@@ -43,8 +44,13 @@ const ClienteForm = ({ isOpen, onClose, clienteToEdit, onSuccess }) => {
         })
       }
     } else {
+      document.body.style.overflow = 'unset';
       setIsAnimating(false)
     }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen, clienteToEdit])
 
   // Lógica para evitar enviar cadenas vacías ""

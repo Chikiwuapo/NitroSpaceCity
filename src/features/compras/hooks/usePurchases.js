@@ -37,8 +37,21 @@ export const usePurchases = () => {
   const updatePurchase = async (id, purchaseData) => {
     try {
       await comprasApi.updatePurchase(id, purchaseData);
+      pushAlert('Compra Actualizada', 'La compra se actualizó correctamente', 'success');
       await fetchPurchases();
     } catch (err) {
+      pushAlert('Error', err.message || 'No se pudo actualizar la compra', 'error');
+      throw err;
+    }
+  };
+
+  const deletePurchase = async (id) => {
+    try {
+      await comprasApi.deletePurchase(id);
+      pushAlert('Compra Eliminada', 'La compra se eliminó correctamente', 'success');
+      await fetchPurchases();
+    } catch (err) {
+      pushAlert('Error', err.message || 'No se pudo eliminar la compra', 'error');
       throw err;
     }
   };
@@ -49,7 +62,8 @@ export const usePurchases = () => {
     error, 
     refetch: fetchPurchases,
     registerPurchase,
-    updatePurchase
+    updatePurchase,
+    deletePurchase
   };
 };
 
