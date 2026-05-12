@@ -3,16 +3,20 @@ import { X, Plus, Trash2, CheckCircle2, Search, ShoppingCart, Info, User } from 
 import AgregarCarro from './AgregarCarro'
 import ClienteSelector from './ClienteSelector'
 import { ventasApi } from '../services/ventasApi'
+import { Modal } from '../../../shared'
+import { useNotificationSystem } from '../../notificaciones/hooks/useNotificationSystem'
 
 const IGV_RATE = 0.18
 
 const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
+  const { pushAlert } = useNotificationSystem()
   const [showSuccess, setShowSuccess] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isAgregarModalOpen, setIsAgregarModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState(null)
   const [vehiculosSeleccionados, setVehiculosSeleccionados] = useState([])
+  const [showStockModal, setShowStockModal] = useState(false)
   const [user] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('user') || '{}')
@@ -61,6 +65,11 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
       return
     }
     
+    if (vehiculo.stock < 1) {
+      setShowStockModal(true)
+      return
+    }
+    
     setVehiculosSeleccionados([...vehiculosSeleccionados, { ...vehiculo, cantidad: 1, descuento: 0 }])
     setIsAgregarModalOpen(false) 
   }
@@ -94,9 +103,13 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
       
       const ventaData = {
         id_cliente: selectedCliente.id,
+        cliente_id: selectedCliente.id,
         serie: form.serie,
+        numero_comprobante: form.numero,
         nro_comprobante: form.numero,
         fecha_venta: form.fecha,
+        observacion: form.observacion,
+        metodo_pago: form.metodoPago,
         subtotal: subtotal,
         igv: igv,
         total: total,
@@ -110,7 +123,11 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
         }))
       }
 
-      await ventasApi.createVenta(ventaData)
+      const response = await ventasApi.createVenta(ventaData)
+      
+      // Extraer ID del comprobante o usar el número ingresado
+      const saleId = response?.data?.numero_comprobante || form.numero;
+      pushAlert('Venta Exitosa', `Se registró la boleta ${form.serie}-${saleId}`, 'success');
       
       setShowSuccess(true)
       setTimeout(() => {
@@ -222,6 +239,24 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
             
             {/* SECCIÓN IZQUIERDA: TABLA */}
             <div className="lg:col-span-2 space-y-4">
+              {/* RESUMEN DE CLIENTE SELECCIONADO */}
+              {selectedCliente && (
+                <section className="bg-gradient-to-r from-[#0a332a] to-[#0d4438] p-4 rounded-xl text-white shadow-sm">
+                  <p className="text-xs opacity-75 mb-2">CLIENTE SELECCIONADO</p>
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={selectedCliente.url_img || selectedCliente.img_url || 'https://via.placeholder.com/50'} 
+                      alt={selectedCliente.nombre_completo}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white/20"
+                    />
+                    <div>
+                      <p className="font-bold text-lg">{selectedCliente.nombre_completo || 'Cliente'}</p>
+                      {selectedCliente.dni && <p className="text-xs opacity-75">DNI: {selectedCliente.dni}</p>}
+                    </div>
+                  </div>
+                </section>
+              )}
+
               <section className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm min-h-[400px]">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-blue-600 font-semibold">Vehículos de la Venta</h3>
@@ -353,12 +388,34 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
         </div>
       </div>
 
-      {/* MODAL DE BÚSQUEDA (Encima de todo) */}
+      {/* MODAL DE SELECCIÓN DE VEHÍCULOS */}
       <AgregarCarro 
         isOpen={isAgregarModalOpen} 
         onClose={() => setIsAgregarModalOpen(false)} 
         onSelect={manejarSeleccionVehiculo}
       />
+
+      {/* MODAL DE STOCK INSUFICIENTE */}
+      <Modal
+        isOpen={showStockModal}
+        onClose={() => setShowStockModal(false)}
+        title="Stock Insuficiente"
+        bgColor="bg-[#1a3c34]"
+        textColor="text-white"
+        size="sm"
+      >
+        <p className="text-center">
+          El vehículo seleccionado no tiene stock disponible en el inventario.
+        </p>
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => setShowStockModal(false)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-2xl font-medium transition-colors"
+          >
+            Entendido
+          </button>
+        </div>
+      </Modal>
 
       {/* TOAST EXITOSO */}
       {showSuccess && (

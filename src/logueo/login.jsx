@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, Loader2 } from 'lucide-react'
 import fondoImg from '../assets/image.png';
+import { useNotificationSystem } from '../features/notificaciones/hooks/useNotificationSystem';
 
 const Login = () => {
+  const { pushAlert } = useNotificationSystem()
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [loading, setLoading] = useState(false)
@@ -60,6 +62,7 @@ if (data.user) {
       navigate('/dashboard')
     } catch (err) {
       setError(err.message)
+      pushAlert('Error de Acceso', 'Credenciales incorrectas o fallo de conexión', 'error');
     } finally {
       setLoading(false)
     }

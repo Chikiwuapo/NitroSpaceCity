@@ -1,11 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useCallback} from 'react';
 import { inventarioApi } from '../services/inventarioService';
+import { useNotificationSystem } from '../../notificaciones/hooks/useNotificationSystem';
 
 export const useInventario = () => {
+  const { pushAlert } = useNotificationSystem();
   const [vehiculos, setVehiculos] = useState([]);
   const [filteredVehiculos, setFilteredVehiculos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await inventarioApi.getInventario();
+      setVehiculos(data);
+      setFilteredVehiculos(data);
+      
+      // Verificar stock bajo (< 5)
+      data.forEach(v => {
+        if (v.stock === 0) {
+          pushAlert('Sin Stock', `El modelo ${v.marca} ${v.modelo} se ha quedado sin unidades (Stock: 0)`, 'error');
+        } else if (v.stock < 5) {
+          pushAlert('Stock Crítico', `Quedan pocas unidades de ${v.marca} ${v.modelo} (Stock: ${v.stock})`, 'warning');
+        }
+      });
+
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Error al cargar el inventario');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   const [filters, setFilters] = useState({
     search: '',
     marca: '',
@@ -16,6 +41,9 @@ export const useInventario = () => {
     precioMax: ''
   });
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -111,6 +139,7 @@ export const useInventario = () => {
     estados,
     transmisiones,
     handleFilterChange,
+    refetch: fetchData,
     resetFilters
   };
 };
