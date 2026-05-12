@@ -165,12 +165,14 @@ const getStatusColor = (status) => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={sale.cliente.img_url}
-                        alt={sale.cliente.nombre_completo}
+                        src={sale.cliente?.img_url || sale.cliente?.url_img || 'https://via.placeholder.com/80?text=Cliente'}
+                        alt={sale.cliente?.nombre_completo || sale.cliente?.name || 'Cliente'}
                         className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
                       />
                       <div>
-                        <p className="font-semibold text-gray-800">{sale.cliente.nombre_completo}</p>
+                        <p className="font-semibold text-gray-800">
+                          {typeof sale.cliente === 'string' ? sale.cliente : (sale.cliente?.nombre_completo || 'Cliente')}
+                        </p>
                         <p className="text-sm text-gray-500 flex items-center gap-1">
                           <User className="w-3 h-3" />
                           {sale.usuario}
@@ -252,12 +254,14 @@ const getStatusColor = (status) => {
 
               <div className="flex items-center gap-4 mb-6">
                 <img
-                  src={selectedSale.cliente.img_url || 'https://via.placeholder.com/80'}
-                  alt={selectedSale.cliente.nombre_completo || 'Cliente'}
+                  src={selectedSale.cliente?.img_url || selectedSale.cliente?.url_img || 'https://via.placeholder.com/80?text=Cliente'}
+                  alt={typeof selectedSale.cliente === 'string' ? selectedSale.cliente : (selectedSale.cliente?.nombre_completo || 'Cliente')}
                   className="w-20 h-20 rounded-full object-cover border-2 border-gray-100"
                 />
                 <div>
-                  <p className="text-xl font-bold text-gray-800">{selectedSale.cliente.nombre_completo || 'Cliente'}</p>
+                  <p className="text-xl font-bold text-gray-800">
+                    {typeof selectedSale.cliente === 'string' ? selectedSale.cliente : (selectedSale.cliente?.nombre_completo || 'Cliente')}
+                  </p>
                   <p className="text-gray-500 flex items-center gap-1">
                     <User className="w-4 h-4" />
                     Vendedor: {selectedSale.usuario || 'Vendedor'}

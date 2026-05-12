@@ -20,12 +20,22 @@ export const ventasApi = {
         throw new Error('Error al obtener ventas');
       }
 
-      const data = await response.json();
+      const responseData = await response.json();
+      const data = responseData.data || responseData;
 
-      console.log('📥 Datos de ventas desde API:', data);
+      if (!Array.isArray(data)) {
+        return [];
+      }
 
       return data.map((v) => {
-        const cliente = v.cliente || {};
+        // Manejar el caso donde v.cliente podría ser un objeto o una cadena
+        let clienteData = v.cliente || {};
+        
+        // Si v.cliente es una cadena (ej: "cliente2"), intentar usarla como nombre
+        if (typeof v.cliente === 'string') {
+          clienteData = { nombre_completo: v.cliente };
+        }
+
         const usuario = v.usuario || {};
         const estadoPago = v.estadoPago || {};
         const estadoEntrega = v.estadoEntrega || {};
@@ -36,16 +46,25 @@ export const ventasApi = {
           id: v.id,
 
           cliente: {
-            id: cliente.id,
-            primer_nombre: cliente.primer_nombre,
-            segundo_nombre: cliente.segundo_nombre,
-            primer_apellido: cliente.primer_apellido,
-            segundo_apellido: cliente.segundo_apellido,
+            id: clienteData.id,
+            primer_nombre: clienteData.primer_nombre || '',
+            segundo_nombre: clienteData.segundo_nombre || '',
+            primer_apellido: clienteData.primer_apellido || '',
+            segundo_apellido: clienteData.segundo_apellido || '',
             nombre_completo:
-              cliente.nombre_completo ||
-              `${cliente.primer_nombre || ''} ${cliente.segundo_nombre || ''} ${cliente.primer_apellido || ''} ${cliente.segundo_apellido || ''}`.trim() ||
-              `${cliente.nombres || ''} ${cliente.apellidos || ''}`.trim(),
-            img_url: cliente.url_img || cliente.img_url || null,
+              // Priorizar nombres individuales si existen (más confiable)
+              `${clienteData.primer_nombre || ''} ${clienteData.segundo_nombre || ''} ${clienteData.primer_apellido || ''} ${clienteData.segundo_apellido || ''}`.trim() ||
+              clienteData.nombre_completo ||
+              clienteData.nombre ||
+              clienteData.name ||
+              `${clienteData.nombres || ''} ${clienteData.apellidos || ''}`.trim() ||
+              clienteData.razon_social ||
+              'Cliente',
+            img_url:
+              clienteData.url_img ||
+              clienteData.img_url ||
+              clienteData.imagen ||
+              'https://via.placeholder.com/80?text=Cliente',
           },
 
           usuario:
@@ -106,8 +125,8 @@ export const ventasApi = {
               transmision: vehiculo.transmision || '',
               combustible: vehiculo.tipo_combustible || '',
               cantidad: item.cantidad,
-              precio_unitario: vehiculo.precio_u || 0,
-              subtotal: item.subtotal,
+              precio_unitario: vehiculo.precio || vehiculo.precio_u || 0,
+              subtotal: item.subtotal || (vehiculo.precio || vehiculo.precio_u || 0) * item.cantidad,
             };
           }) || [],
         };
@@ -126,8 +145,6 @@ export const ventasApi = {
         throw new Error('No hay token, usuario no autenticado');
       }
 
-      console.log('📤 Enviando venta a API:', venta);
-
       const response = await fetch(
         'https://faithful-healing-production-9e06.up.railway.app/api/sale/register',
         {
@@ -141,7 +158,6 @@ export const ventasApi = {
       );
 
       const responseData = await response.json();
-      console.log('📥 Respuesta de API:', responseData);
 
       if (!response.ok) {
         const errorMsg = responseData.message || responseData.error || 'Error al registrar venta';
