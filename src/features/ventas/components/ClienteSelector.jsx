@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Search, Plus, User } from 'lucide-react'
+import { X, Search, Plus, User, Loader2, CheckCircle2 } from 'lucide-react'
 import { useClientes } from '../../clientes'
 import { useNavigate } from 'react-router-dom'
 
@@ -30,11 +30,11 @@ const ClienteSelector = ({ selectedCliente, onSelectCliente }) => {
           {selectedCliente ? (
             <div className="flex items-center gap-2">
               <img
-                src={selectedCliente.url_img || 'https://via.placeholder.com/40'}
-                alt={selectedCliente.nombre_completo}
+                src={selectedCliente.url_img || selectedCliente.img_url || 'https://via.placeholder.com/40'}
+                alt={selectedCliente.nombre_completo || selectedCliente.name || 'Cliente'}
                 className="w-8 h-8 rounded-full object-cover"
               />
-              <span className="text-gray-800 font-medium">{selectedCliente.nombre_completo}</span>
+              <span className="text-gray-800 font-medium">{selectedCliente.nombre_completo || selectedCliente.name || 'Cliente'}</span>
             </div>
           ) : (
             <span className="text-gray-500">Seleccionar cliente</span>
@@ -73,8 +73,8 @@ const ClienteSelector = ({ selectedCliente, onSelectCliente }) => {
                       onClick={() => handleSelectCliente(cliente)}
                     >
                       <img
-                        src={cliente.url_img || 'https://via.placeholder.com/40'}
-                        alt={cliente.nombre_completo}
+                        src={cliente.url_img || cliente.img_url || 'https://via.placeholder.com/40'}
+                        alt={cliente.nombre_completo || cliente.name || 'Cliente'}
                         className="w-8 h-8 rounded-full object-cover"
                       />
                       <div className="flex-1">

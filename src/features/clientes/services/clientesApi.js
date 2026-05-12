@@ -54,8 +54,6 @@ export const clientesApi = {
         throw new Error('No hay token, usuario no autenticado');
       }
 
-      console.log('📤 Enviando cliente a API:', cliente);
-
       const response = await fetch(
         'https://faithful-healing-production-9e06.up.railway.app/api/client/register',
         {
@@ -69,7 +67,6 @@ export const clientesApi = {
       );
 
       const responseData = await response.json();
-      console.log('📥 Respuesta de API:', responseData);
 
       if (!response.ok) {
         const errorMsg = responseData.message || responseData.error || 'Error al crear cliente';

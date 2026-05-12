@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ShoppingCart, CreditCard, Truck, Calendar, ChevronRight, Loader2, AlertCircle, UserPlus, ClipboardCheck } from 'lucide-react'
 import { usePurchases } from '../hooks/usePurchases'
+import { useProviders } from '../hooks/useProviders'
 import {
   ProviderModal,
   OrderModal,
@@ -13,117 +14,56 @@ import {
 } from '../index'
 
 const ComprasList = () => {
-  const { data: purchases, loading, error } = usePurchases()
+  const { data: purchases, loading: loadingPurchases, error: errorPurchases, registerPurchase, updatePurchase: updatePurchaseData } = usePurchases()
+  const { providers, loading: loadingProviders, error: errorProviders, addProvider, updateProvider } = useProviders()
+  
   const [activeTab, setActiveTab] = useState('ordenes')
-  const [providers, setProviders] = useState([])
   const [orders, setOrders] = useState([])
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [editingProvider, setEditingProvider] = useState(null)
+  
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false)
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
   const [isReceptionOpen, setIsReceptionOpen] = useState(false)
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false)
-  const [toast, setToast] = useState('')
 
   useEffect(() => {
-    const storedProviders = localStorage.getItem('compras_proveedores')
-    const storedOrders = localStorage.getItem('compras_local_orders')
+    if (loadingPurchases || errorPurchases) return
+    setOrders(purchases)
+  }, [loadingPurchases, purchases, errorPurchases])
 
-    if (storedProviders) {
-      setProviders(JSON.parse(storedProviders))
-    }
-    if (storedOrders) {
-      setOrders(JSON.parse(storedOrders))
-    }
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem('compras_proveedores', JSON.stringify(providers))
-  }, [providers])
-
-  useEffect(() => {
-    const localCreatedOrders = orders.filter((order) => order.isLocal)
-    localStorage.setItem('compras_local_orders', JSON.stringify(localCreatedOrders))
-  }, [orders])
-
-  useEffect(() => {
-    if (loading || error) return
-    const apiOrders = purchases.map((purchase) => convertPurchaseToOrder(purchase))
-    setOrders((current) => {
-      const currentIds = new Set(current.map((order) => order.id))
-      const merged = [...current]
-      apiOrders.forEach((order) => {
-        if (!currentIds.has(order.id)) {
-          merged.push(order)
-        }
-      })
-      return merged
-    })
-  }, [loading, purchases, error])
-
-  const convertPurchaseToOrder = (purchase) => {
-    const total = Number(purchase.total) || 0
-    const subtotal = Number(purchase.subtotal || total) || 0
-    return {
-      id: purchase.id?.toString() || `api-${Math.random()}`,
-      nro_orden: purchase.nro_comprobante || `OC-${purchase.id}`,
-      proveedor: purchase.proveedor || 'Proveedor registrado',
-      proveedorId: `api-${purchase.id}`,
-      fecha_entrega: purchase.fecha_compra || new Date().toISOString(),
-      metodo_pago: purchase.metodo_pago || 'Contado',
-      items: [
-        {
-          modelo: purchase.modelo_auto || 'Vehículo',
-          ano: 'N/A',
-          color: purchase.tipo_vehiculo || 'N/A',
-          precio: total,
-        },
-      ],
-      estado_pago: purchase.estado_pago || 'Pendiente',
-      estado_entrega: purchase.estado_entrega || 'Pendiente',
-      subtotal: subtotal,
-      igv: Number(purchase.igv) || 0,
-      total: total,
-      isLocal: false,
+  const handleProviderSave = async (providerData) => {
+    if (editingProvider) {
+      await updateProvider(editingProvider.id, providerData)
+    } else {
+      await addProvider(providerData)
     }
   }
 
-  const handleShowToast = (message) => {
-    setToast(message)
-    window.setTimeout(() => setToast(''), 2500)
-  }
-
-  const handleProviderSave = (provider) => {
-    setProviders((prev) => [provider, ...prev])
-    handleShowToast('Proveedor registrado correctamente')
-  }
-
-  const handleOrderSave = (order) => {
-    setOrders((prev) => [order, ...prev])
-    handleShowToast('Orden de compra emitida')
+  const handleOrderSave = async (purchaseData) => {
+    await registerPurchase(purchaseData)
     setActiveTab('ordenes')
   }
 
-  const handleStartReception = (order) => {
-    setSelectedOrder(order)
-    setIsReceptionOpen(true)
-  }
-
   const handleConfirmReception = (receptionData) => {
-    const updated = {
-      ...selectedOrder,
-      estado_entrega: 'Entregado',
-      recepcion: receptionData,
-      fecha_recepcion: new Date().toISOString(),
-    }
-
-    setOrders((prev) => prev.map((order) => (order.id === updated.id ? updated : order)))
-    setSelectedOrder(updated)
-    handleShowToast('Recepción registrada y el inventario se actualizó')
+    // La recepción ahora se maneja implícitamente por el stock al registrar la compra,
+    // pero podemos mantener la lógica visual si es necesario.
+    setIsReceptionOpen(false)
   }
 
   const handleSelectOrder = (order) => {
     setSelectedOrder(order)
     setIsOrderDetailOpen(true)
+  }
+
+  const handleEditProvider = (provider) => {
+    setEditingProvider(provider)
+    setIsProviderModalOpen(true)
+  }
+
+  const handleNewProvider = () => {
+    setEditingProvider(null)
+    setIsProviderModalOpen(true)
   }
 
   const statWidgets = [
@@ -150,7 +90,10 @@ const ComprasList = () => {
     },
   ]
 
-  if (loading) {
+  const isLoading = loadingPurchases || loadingProviders
+  const error = errorPurchases || errorProviders
+
+  if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 text-[#0a332a] animate-spin" />
@@ -195,28 +138,23 @@ const ComprasList = () => {
 
       <StatsWidgets widgets={statWidgets} />
 
-      {toast && (
-        <div className="mb-6 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
-          {toast}
-        </div>
-      )}
-
-      {activeTab === 'proveedores' && (
-        <ProvidersTab providers={providers} onNewProvider={() => setIsProviderModalOpen(true)} />
-      )}
-
-      {activeTab === 'ordenes' && (
-        <OrdersTab orders={orders} onNewOrder={() => setIsOrderModalOpen(true)} onSelectOrder={handleSelectOrder} />
-      )}
-
-      {activeTab === 'recepciones' && (
-        <ReceptionsTab orders={orders} onStartReception={handleStartReception} />
-      )}
+      <div className="mt-8">
+        {activeTab === 'ordenes' && (
+          <OrdersTab orders={orders} onNewOrder={() => setIsOrderModalOpen(true)} onSelectOrder={handleSelectOrder} />
+        )}
+        {activeTab === 'proveedores' && (
+          <ProvidersTab providers={providers} onNewProvider={handleNewProvider} onEditProvider={handleEditProvider} />
+        )}
+        {activeTab === 'recepciones' && (
+          <ReceptionsTab orders={orders.filter((o) => o.estado_entrega === 'Pendiente')} onStartReception={handleStartReception} />
+        )}
+      </div>
 
       <ProviderModal
         isOpen={isProviderModalOpen}
         onClose={() => setIsProviderModalOpen(false)}
         onSave={handleProviderSave}
+        editingProvider={editingProvider}
       />
 
       <OrderModal
@@ -226,19 +164,21 @@ const ComprasList = () => {
         providers={providers}
       />
 
-      <ReceptionModal
-        isOpen={isReceptionOpen}
-        onClose={() => setIsReceptionOpen(false)}
-        order={selectedOrder}
-        onConfirm={handleConfirmReception}
-      />
-
-      <OrderDetailModal
-        isOpen={isOrderDetailOpen}
-        onClose={() => setIsOrderDetailOpen(false)}
-        order={selectedOrder}
-        onStartReception={handleStartReception}
-      />
+      {selectedOrder && (
+        <>
+          <ReceptionModal
+            isOpen={isReceptionOpen}
+            onClose={() => setIsReceptionOpen(false)}
+            onConfirm={handleConfirmReception}
+            order={selectedOrder}
+          />
+          <OrderDetailModal
+            isOpen={isOrderDetailOpen}
+            onClose={() => setIsOrderDetailOpen(false)}
+            order={selectedOrder}
+          />
+        </>
+      )}
     </div>
   )
 }

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { X, CheckCircle2, Loader2, Camera } from 'lucide-react'
 import { clientesApi } from '../services/clientesApi'
+import { useNotificationSystem } from '../../notificaciones/hooks/useNotificationSystem'
 
 const ClienteForm = ({ isOpen, onClose, clienteToEdit, onSuccess }) => {
+  const { pushAlert } = useNotificationSystem()
   const [isAnimating, setIsAnimating] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -59,8 +61,10 @@ const ClienteForm = ({ isOpen, onClose, clienteToEdit, onSuccess }) => {
 
     if (clienteToEdit) {
       await clientesApi.updateCliente(clienteToEdit.id, dataToSend);
+      pushAlert('Cliente Actualizado', `Se modificaron los datos de ${form.primer_nombre} ${form.primer_apellido}`, 'info');
     } else {
       await clientesApi.createCliente(dataToSend);
+      pushAlert('Nuevo Cliente', `Se registró a ${form.primer_nombre} ${form.primer_apellido} correctamente`, 'success');
     }
 
     setShowSuccess(true);
