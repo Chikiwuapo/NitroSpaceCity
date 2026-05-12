@@ -4,6 +4,7 @@ import { useSales } from '../hooks/useSales'
 import RegistrarVenta from '../components/RegistroVenta'
 import EditarVenta from '../components/EditarVenta'
 import { Pagination } from '../../../shared/components/Pagination'
+import { LoadingAnimation } from '../../../shared/components/LoadingAnimation';
 
 const VentasList = () => {
   const { data: sales, loading, error, refetch } = useSales()
@@ -112,8 +113,8 @@ const getStatusColor = (status) => {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-[#0a332a] animate-spin" />
+      <div className="h-screen flex items-center justify-center bg-[#f4f6f9]">
+        <LoadingAnimation />
       </div>
     )
   }

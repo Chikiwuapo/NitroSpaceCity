@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useUsers } from '../hooks/useUsers'
 import RegistrarUsuario from '../components/RegistrarUsuario'
 import { Pagination } from '../../../shared/components/Pagination'
+import { LoadingAnimation } from '../../../shared/components/LoadingAnimation';
 
 const getFullName = (user) => {
   const names = [user.firstName, user.secondName, user.lastName].filter(Boolean)
@@ -88,6 +89,13 @@ const UsuariosList = () => {
     },
   ]
 
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#f4f6f9]">
+        <LoadingAnimation />
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -104,28 +112,22 @@ const UsuariosList = () => {
 
       {/* WIDGETS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {loading ? (
-          [1, 2].map((i) => (
-            <div key={i} className="bg-white rounded-[32px] p-6 shadow-sm animate-pulse h-28 bg-gray-50"></div>
-          ))
-        ) : (
-          statWidgets.map((widget, index) => {
-            const Icon = widget.icon
-            return (
-              <div key={index} className="bg-white rounded-[32px] p-6 shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className={`${widget.color} p-4 rounded-2xl`}>
-                    <Icon className={`w-6 h-6 ${widget.iconColor}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">{widget.title}</p>
-                    <span className="text-3xl font-bold text-gray-800">{widget.value}</span>
-                  </div>
+        {statWidgets.map((widget, index) => {
+          const Icon = widget.icon
+          return (
+            <div key={index} className="bg-white rounded-[32px] p-6 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className={`${widget.color} p-4 rounded-2xl`}>
+                  <Icon className={`w-6 h-6 ${widget.iconColor}`} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">{widget.title}</p>
+                  <span className="text-3xl font-bold text-gray-800">{widget.value}</span>
                 </div>
               </div>
-            )
-          })
-        )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Filtros */}
@@ -179,15 +181,13 @@ const UsuariosList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {loading 
-                ? [1, 2, 3, 4, 5].map((i) => <UserRowSkeleton key={i} />)
-                : currentItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                        No se encontraron usuarios.
-                      </td>
-                    </tr>
-                  ) : currentItems.map((user) => (
+              {currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    No se encontraron usuarios.
+                  </td>
+                </tr>
+              ) : currentItems.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">

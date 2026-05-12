@@ -1,4 +1,4 @@
-import { Car, CheckCircle, XCircle, DollarSign } from 'lucide-react';
+import { Car, DollarSign } from 'lucide-react';
 
 export const KPISection = ({ kpis }) => {
   const kpiItems = [
@@ -10,20 +10,6 @@ export const KPISection = ({ kpis }) => {
       iconColor: 'text-[#0a332a]'
     },
     {
-      title: 'Disponibles',
-      value: kpis.disponibles,
-      icon: CheckCircle,
-      color: 'bg-emerald-100',
-      iconColor: 'text-emerald-600'
-    },
-    {
-      title: 'Vendidos',
-      value: kpis.vendidos,
-      icon: XCircle,
-      color: 'bg-rose-100',
-      iconColor: 'text-rose-600'
-    },
-    {
       title: 'Valor Total',
       value: `S/ ${kpis.valorTotal.toLocaleString()}`,
       icon: DollarSign,
@@ -33,7 +19,7 @@ export const KPISection = ({ kpis }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       {kpiItems.map((item, index) => {
         const Icon = item.icon;
         return (

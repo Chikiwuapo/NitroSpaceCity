@@ -12,6 +12,7 @@ import {
 } from '../index'
 import EditarCompra from '../components/EditarCompra'
 import { Modal } from '../../../shared'
+import { LoadingAnimation } from '../../../shared/components/LoadingAnimation';
 
 const ComprasList = () => {
   const { data: purchases, loading: loadingPurchases, error: errorPurchases, registerPurchase, updatePurchase, deletePurchase } = usePurchases()
@@ -106,8 +107,8 @@ const ComprasList = () => {
 
   if (isLoading) {
     return (
-      <div className="p-8 flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-[#0a332a] animate-spin" />
+      <div className="h-screen flex items-center justify-center bg-[#f4f6f9]">
+        <LoadingAnimation />
       </div>
     )
   }

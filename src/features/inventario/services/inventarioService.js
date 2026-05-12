@@ -25,6 +25,13 @@ export const inventarioApi = {
       // Unificamos el mapeo para que sea seguro y completo
       return data.map((v) => {
         const urlImagenDefecto = 'https://via.placeholder.com/150?text=Auto';
+
+        // Sanitiza la URL: solo acepta URLs absolutas (http/https). 
+        // Paths relativos como "car1.jpg" o URLs mal formadas se reemplazan con el placeholder.
+        const rawImg = v.url_img || '';
+        const urlImagen = rawImg.startsWith('http://') || rawImg.startsWith('https://')
+          ? rawImg
+          : urlImagenDefecto;
         
         return {
           id: v.id,
@@ -36,8 +43,8 @@ export const inventarioApi = {
           modelo: v.modelo?.nombre || v.modelo || 'Sin modelo',
           
           // Imagen: Se asegura de tener ambos nombres de propiedad por compatibilidad
-          url_img: v.url_img || urlImagenDefecto,
-          imagen: v.url_img || urlImagenDefecto,
+          url_img: urlImagen,
+          imagen: urlImagen,
 
           // Números: Forzamos a Number para evitar errores en cálculos o inputs
           precio_u: Number(v.precio_u || 0),

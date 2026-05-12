@@ -6,6 +6,7 @@ import ClienteForm from '../components/ClienteForm'
 import ClientesFiltros from '../components/ClientesFiltro';
 import ConfirmModal from '../components/ConfirmModal';
 import { Pagination } from '../../../shared/components/Pagination';
+import { LoadingAnimation } from '../../../shared/components/LoadingAnimation';
 
 const statWidgets = [
   {
@@ -93,6 +94,14 @@ const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
       console.error('Error al eliminar:', error);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#f4f6f9]">
+        <LoadingAnimation />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 h-full flex flex-col">
@@ -185,13 +194,7 @@ const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
             </thead>
 
             <tbody className="bg-white divide-y divide-gray-100">
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-6">
-                    Cargando clientes...
-                  </td>
-                </tr>
-              ) : currentItems.length === 0 ? (
+              {currentItems.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-6">
                     No hay clientes

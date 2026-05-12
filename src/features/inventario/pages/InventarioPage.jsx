@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
 import { useInventario } from '../hooks/useInventario';
 import { KPISection } from '../components/KPISection';
 import { InventarioFilters } from '../components/InventarioFilters';
@@ -152,17 +151,6 @@ const InventarioPage = () => {
     <div className="h-screen flex flex-col bg-[#f4f6f9] overflow-hidden">
       <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
         <div className="p-6 h-full flex flex-col">
-          {/* CABECERA */}
-          <div className="flex justify-end items-end mb-6">
-            <button 
-              onClick={handleAdd}
-              className="bg-[#0a332a] text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 hover:bg-[#0d4438] transition-all shadow-lg"
-            >
-              <Plus className="w-5 h-5" />
-              Nuevo Vehículo
-            </button>
-          </div>
-
           {/* KPIS */}
           <KPISection kpis={kpis} />
           
@@ -172,6 +160,7 @@ const InventarioPage = () => {
             marcas={[...new Set(vehiculos.map((v) => v.marca))]} 
             onFilterChange={handleFilterChange}
             onReset={resetFilters}
+            onAddNew={handleAdd}
           />
 
           {/* TABLA */}

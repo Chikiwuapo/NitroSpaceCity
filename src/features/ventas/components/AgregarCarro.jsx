@@ -97,7 +97,7 @@ const AgregarCarro = ({ isOpen, onClose, onSelect }) => {
                 })}
               >
                 <div className="flex gap-4">
-                  <img src={v.imagen || 'https://via.placeholder.com/80'} alt={v.modelo} className="w-20 h-16 object-cover rounded-lg border" />
+                  <img src={v.imagen || 'https://via.placeholder.com/80'} alt={v.modelo} className="w-20 h-16 object-cover rounded-lg border" onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/80?text=Auto'; }} />
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <h4 className="font-bold text-gray-800">{v.marca} {v.modelo}</h4>

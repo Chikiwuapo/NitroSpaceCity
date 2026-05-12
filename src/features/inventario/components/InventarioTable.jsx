@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Car, Eye, Edit, Trash2, Fuel, Zap, Gauge } from 'lucide-react';
+import { Car, Eye, Edit, Fuel, Zap, Gauge } from 'lucide-react';
 import { Pagination } from '../../../shared/components/Pagination';
 
 const StatusBadge = ({ estado, idVenta }) => {
@@ -185,13 +185,6 @@ export const InventarioTable = ({ vehiculos, onEdit, onDelete, onView }) => {
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
             >
               <Edit size={16} />
-            </button>
-
-            <button
-              onClick={() => onDelete(v.id)}
-              className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-            >
-              <Trash2 size={16} />
             </button>
 
           </div>

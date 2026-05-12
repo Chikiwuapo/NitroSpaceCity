@@ -1,10 +1,11 @@
-import { Search, RefreshCw, Filter } from 'lucide-react';
+import { Search, RefreshCw, Filter, Plus } from 'lucide-react';
 
 export const InventarioFilters = ({
   filters,
   marcas = [],
   onFilterChange,
-  onReset
+  onReset,
+  onAddNew
 }) => {
   
   // Función para asegurar que las opciones sean únicas y no nulas
@@ -22,7 +23,7 @@ export const InventarioFilters = ({
 
       <div className="flex flex-wrap gap-4 items-end">
         {/* Barra de Búsqueda */}
-        <div className="flex-1 min-w-[250px]">
+        <div className="flex-1 min-w-[200px]">
           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Búsqueda Rápida</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -37,7 +38,7 @@ export const InventarioFilters = ({
         </div>
 
         {/* Marca */}
-        <div className="min-w-[140px]">
+        <div className="min-w-[130px]">
           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Marca</label>
           <select
             value={filters.marca || ''}
@@ -52,7 +53,7 @@ export const InventarioFilters = ({
         </div>
 
         {/* Estado de Venta (ID 1, 2, 3) */}
-        <div className="min-w-[140px]">
+        <div className="min-w-[130px]">
           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Estado Venta</label>
           <select
             value={filters.estado || ''}
@@ -67,7 +68,7 @@ export const InventarioFilters = ({
         </div>
 
         {/* Transmisión (Valor sin tilde para match con API) */}
-        <div className="min-w-[140px]">
+        <div className="min-w-[130px]">
           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Caja</label>
           <select
             value={filters.transmision || ''}
@@ -81,7 +82,7 @@ export const InventarioFilters = ({
         </div>
 
         {/* Combustible (Nuevo Filtro) */}
-        <div className="min-w-[140px]">
+        <div className="min-w-[130px]">
           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
             Combustible
           </label>
@@ -102,24 +103,24 @@ export const InventarioFilters = ({
 
         {/* Rangos de Precio */}
         <div className="flex gap-2">
-          <div className="w-[110px]">
+          <div className="w-[100px]">
             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Precio Mín</label>
             <input
               type="number"
               value={filters.precioMin || ''}
               onChange={(e) => onFilterChange('precioMin', e.target.value)}
               placeholder="Min"
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0a332a]/10"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0a332a]/10"
             />
           </div>
-          <div className="w-[110px]">
+          <div className="w-[100px]">
             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Precio Máx</label>
             <input
               type="number"
               value={filters.precioMax || ''}
               onChange={(e) => onFilterChange('precioMax', e.target.value)}
               placeholder="Max"
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0a332a]/10"
+              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0a332a]/10"
             />
           </div>
         </div>
@@ -127,10 +128,19 @@ export const InventarioFilters = ({
         {/* Botón Reset */}
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-500 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-all font-bold text-xs uppercase tracking-widest border border-transparent hover:border-rose-100"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-500 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-all font-bold text-xs uppercase tracking-widest border border-transparent hover:border-rose-100"
         >
           <RefreshCw className="w-4 h-4" />
           Limpiar
+        </button>
+
+        {/* Botón Nuevo Vehículo */}
+        <button 
+          onClick={onAddNew}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#0a332a] text-white rounded-2xl hover:bg-[#0d4438] transition-all font-bold text-xs uppercase tracking-widest shadow-lg"
+        >
+          <Plus className="w-4 h-4" />
+          Nuevo Vehículo
         </button>
       </div>
     </div>

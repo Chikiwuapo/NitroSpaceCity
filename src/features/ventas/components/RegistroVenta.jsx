@@ -291,7 +291,7 @@ const RegistrarVenta = ({ isOpen, onClose, onSuccess }) => {
                           <td className="px-4 py-4">{idx + 1}</td>
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
-                              <img src={v.img} className="w-10 h-8 rounded object-cover border" alt="car" />
+                              <img src={v.img} className="w-10 h-8 rounded object-cover border" alt="car" onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/80?text=Auto'; }} />
                               <div>
                                 <p className="font-bold text-gray-800">{v.marca} {v.modelo}</p>
                                 <p className="text-[10px] text-gray-400">Año: {v.anio}</p>

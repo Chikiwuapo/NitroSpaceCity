@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { BarChart3, CreditCard, Warehouse } from 'lucide-react';
+import { BarChart3, Warehouse } from 'lucide-react';
 import { MainAnalytics } from './MainAnalytics';
-import { DistributionCharts } from './DistributionCharts';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const slideNavItems = [
   { id: 0, icon: BarChart3, label: 'Ventas' },
-  { id: 1, icon: CreditCard, label: 'Pagos' },
-  { id: 2, icon: Warehouse, label: 'Inventario' },
+  { id: 1, icon: Warehouse, label: 'Inventario' },
 ];
 
 export const ReportSlider = ({ data }) => {
@@ -52,15 +50,6 @@ export const ReportSlider = ({ data }) => {
               ventasMensuales={data.ventasMensuales}
               actividadUsuarios={data.actividadUsuarios}
             />
-          </div>
-
-          <div className="min-w-full h-full px-3">
-            <div className="h-full">
-              <DistributionCharts
-                metodosPago={data.metodosPago}
-                estadoEntregas={data.estadoEntregas}
-              />
-            </div>
           </div>
 
           <div className="min-w-full h-full pl-3">
